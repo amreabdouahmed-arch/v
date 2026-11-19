@@ -197,10 +197,30 @@ async fn main() -> Result<()> {
             "Unknown SEMANTIC_MODE \"{semantic_mode}\"; only \"off\" disables semantic search"
         );
     }
-    let semantic_engine = if semantic_mode.eq_ignore_ascii_case("off") {
+    // Dev/ops escape hatch: "off" skips the derived semantic index build at
+    // startup so the API binds in seconds instead of minutes. The default
+    // ("auto") keeps the previous behaviour unchanged.
+    let semantic_index_mode = env::var("SEMANTIC_INDEX")
+        .unwrap_or_else(|_| "auto".to_owned())
+        .trim()
+        .to_owned();
+    if semantic_index_mode != "auto" && !semantic_index_mode.eq_ignore_ascii_case("off") {
+        eprintln!(
+            "Unknown SEMANTIC_INDEX \"{semantic_index_mode}\"; only \"off\" skips the build"
+        );
+    }
+    let skip_semantic_build = semantic_mode.eq_ignore_ascii_case("off")
+        || semantic_index_mode.eq_ignore_ascii_case("off");
+    let semantic_engine = if skip_semantic_build {
+        if semantic_mode.eq_ignore_ascii_case("off") {
+            eprintln!("Semantic search disabled (SEMANTIC_MODE=off)");
+        } else {
+            eprintln!("Semantic index build skipped (SEMANTIC_INDEX=off)");
+        }
         None
     } else {
         let max_documents = env::var("SEMANTIC_MAX_DOCUMENTS")
+            .or_else(|_| env::var("SEMANTIC_MAX_PAGES"))
             .ok()
             .and_then(|value| value.trim().parse::<usize>().ok())
             .filter(|value| *value > 0)
