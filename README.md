@@ -91,21 +91,30 @@ Reusable Rust implementations for search, NLP, and maintenance:
 
 | Store | Contents | Authority |
 |---|---|---|
-| TiDB `search_documents` | Canonical rows: url, title, description, content, `search_text`, language, status, `crawled_at`, `content_hash`, `source_metadata_json` (`tidb.rs:85-99`) | **Authoritative** |
-| MongoDB `Crawled_Pages` | Documents in the `MONGO_PARTITION_PERCENT` slice (default 20%), written *instead of* TiDB; also the search backend when `SEARCH_BACKEND=mongodb` (`ingest.rs:123-181`, `mongo.rs:45-60`) | Authoritative for its own slice in the current code — see risk below |
+| TiDB `search_documents` | Canonical rows: url, title, description, content, `search_text`, language, status, `crawled_at`, `content_hash`, `source_metadata_json` (`tidb.rs:85-99`) | **Authoritative for its own documents** |
+| MongoDB `Crawled_Pages` | Documents in the `MONGO_PARTITION_PERCENT` slice (default 20%), written *instead of* TiDB; also the search backend when `SEARCH_BACKEND=mongodb` (`ingest.rs:123-181`, `mongo.rs:45-60`) | **Authoritative for its own documents** |
 | MongoDB `velo_crawl_queue` | Durable crawl queue (`mongo.rs:60`, `ingest.rs:328-360`) | Authoritative for queue state |
 | `velo_index/` (Tantivy) | Derived full-text index: `id`, `title`, `url`, `body` (`tantivy_engine.rs:295-307`) | Derived, rebuildable |
 | Semantic index | Derived TF-IDF vectors held in memory (`ported/semantic.rs`) | Derived, rebuildable |
 | Process memory | Spell-check vocabulary, suggester maps, search cache, PageRank scores, recent queries (`state.rs:20-40`) | Derived, rebuilt at startup |
 
-**Rebuild rule:** the Tantivy and semantic indexes MUST be rebuildable from TiDB.
-The current rebuild path reads TiDB *and* MongoDB (`main.rs:123-129`), which is
-only correct while every document also exists in TiDB.
+**Corpus model:** the corpus is the **disjoint union** TiDB ∪ MongoDB. The
+partition is by design, not a replication: each document lives in exactly one
+store (`ingest.rs:123-181`). A document is therefore authoritative in whichever
+store holds it.
 
-> **Open risk (M0 finding):** `ingest.rs:123-181` writes up to
-> `MONGO_PARTITION_PERCENT` (default 20%) of documents to MongoDB **instead of**
-> TiDB and deletes the TiDB row. Rebuilding from TiDB alone would lose that
-> slice. This needs a decision before M1.
+**Rebuild rule:** the Tantivy and semantic indexes are derived and MUST be
+rebuildable from the union of both stores. The rebuild path reads both
+(`main.rs:123-129`).
+
+**Unknown (not confirmed in M0):**
+- Whether any deployment writes the same URL to both stores (the duplicate
+  TiDB row is deleted on a Mongo upsert, `ingest.rs:150-169`, so this should not
+  happen — but it has not been measured across the live corpus).
+- The tier limits and remaining headroom of the two cloud plans.
+- Whether the MongoDB text index exists in every deployment; the local
+  deployment logs `MongoDB text index is missing` at startup and falls back to
+  the keyword path.
 
 ## Run locally
 
@@ -177,9 +186,8 @@ Set `SEARCH_BACKEND=tidb` to use TiDB Cloud and optionally partition documents
 to MongoDB Atlas with `MONGO_PARTITION_PERCENT`. Set `SEARCH_BACKEND=mongodb`
 to use MongoDB alone. The server requires the matching cloud credentials. The
 local Tantivy index (`velo_index/`) and the in-memory semantic index are derived
-caches rebuilt from the cloud stores. TiDB is the authoritative document store;
-MongoDB currently holds a deterministic partition of documents and the crawl
-queue (see "What lives where" for the open risk this creates).
+caches rebuilt from **both** cloud stores, which together form the corpus (see
+"Corpus model" above).
 
 Docker builds and runs the Rust binary directly:
 
