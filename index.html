@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Velo Search</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCI+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJnIiB4MT0iMCIgeTE9IjAiIHgyPSIxIiB5Mj0iMSI+PHN0b3Agb2Zmc2V0PSIwIiBzdG9wLWNvbG9yPSIjMjU2M2ViIi8+PHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjMzhiZGY4Ii8+PC9saW5lYXJHcmFkaWVudD48L2RlZnM+PHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiByeD0iMTUiIGZpbGw9InVybCgjZykiLz48Y2lyY2xlIGN4PSIyNyIgY3k9IjI3IiByPSIxMiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmZmZmIiBzdHJva2Utd2lkdGg9IjUiLz48bGluZSB4MT0iMzciIHkxPSIzNyIgeDI9IjQ5IiB5Mj0iNDkiIHN0cm9rZT0iI2ZmZmZmZiIgc3Ryb2tlLXdpZHRoPSI2IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48L3N2Zz4=" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600&family=Montserrat:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background-color: #ffffff;
+      min-height: 100vh;
+      overflow-x: hidden;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .bg-facets {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    header {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      justify-content: flex-end;
+      padding: 24px 36px;
+    }
+
+    nav {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+
+    nav a {
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      color: #64748b;
+      transition: color 0.15s ease;
+    }
+
+    nav a:hover {
+      color: #1e293b;
+    }
+
+    main {
+      position: relative;
+      z-index: 10;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 0 20px 100px;
+    }
+
+    .logo {
+      font-size: clamp(68px, 9vw, 92px);
+      font-weight: 600;
+      letter-spacing: -0.03em;
+      line-height: 1;
+      margin-bottom: 30px;
+      background: linear-gradient(135deg, #2563eb 0%, #38bdf8 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      user-select: none;
+    }
+
+    .search-wrapper {
+      width: 100%;
+      max-width: 580px;
+      position: relative;
+    }
+
+    .search-box {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      height: 52px;
+      padding: 0 20px;
+      border-radius: 28px;
+      border: 1.5px solid #bfdbfe;
+      background: #ffffff;
+      box-shadow: 0 4px 20px rgba(37, 99, 235, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+      z-index: 20;
+    }
+
+    .search-box:focus-within,
+    .search-box.has-suggestions {
+      border-color: #3b82f6;
+      box-shadow: 0 8px 28px rgba(37, 99, 235, 0.16), 0 2px 6px rgba(0, 0, 0, 0.06);
+    }
+
+    .search-box.has-suggestions {
+      border-bottom-left-radius: 0;
+      border-bottom-right-radius: 0;
+      border-bottom-color: #f1f5f9;
+    }
+
+    .search-icon {
+      width: 19px;
+      height: 19px;
+      color: #94a3b8;
+      flex-shrink: 0;
+    }
+
+    .search-input {
+      width: 100%;
+      border: none;
+      outline: none;
+      background: transparent;
+      font-family: inherit;
+      font-size: 16px;
+      color: #1e293b;
+    }
+
+    .search-input::placeholder {
+      color: #94a3b8;
+    }
+
+    .search-tools {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      flex-shrink: 0;
+    }
+
+    .search-tool {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      padding: 0;
+      border: none;
+      border-radius: 50%;
+      background: transparent;
+      color: #94a3b8;
+      cursor: pointer;
+      transition: background-color 0.15s ease, color 0.15s ease;
+    }
+
+    .search-tool:hover {
+      color: #3b82f6;
+      background-color: #eff6ff;
+    }
+
+    .search-tool svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .clear-btn {
+      display: none;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #94a3b8;
+      padding: 4px;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+    }
+
+    .clear-btn:hover {
+      color: #475569;
+      background-color: #f1f5f9;
+    }
+
+    .clear-btn.visible {
+      display: flex;
+    }
+
+    /* Google Style Autocomplete Dropdown */
+    .autocomplete-dropdown {
+      display: none;
+      position: absolute;
+      top: 51px;
+      left: 0;
+      right: 0;
+      background: #ffffff;
+      border: 1.5px solid #3b82f6;
+      border-top: none;
+      border-bottom-left-radius: 24px;
+      border-bottom-right-radius: 24px;
+      box-shadow: 0 12px 28px rgba(37, 99, 235, 0.18);
+      z-index: 15;
+      overflow: hidden;
+      padding-bottom: 8px;
+    }
+
+    .autocomplete-dropdown.visible {
+      display: block;
+    }
+
+    .suggestion-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 11px 20px;
+      cursor: pointer;
+      font-size: 15px;
+      color: #202124;
+      transition: background-color 0.1s ease;
+    }
+
+    .suggestion-item:hover,
+    .suggestion-item.selected {
+      background-color: #f1f5f9;
+    }
+
+    .suggestion-item .item-icon {
+      width: 16px;
+      height: 16px;
+      color: #94a3b8;
+      flex-shrink: 0;
+    }
+
+    .suggestion-item .item-text {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex: 1;
+    }
+
+    .suggestion-item .item-text strong {
+      font-weight: 600;
+      color: #0f172a;
+    }
+
+    @media (max-width: 600px) {
+      header { padding: 18px 20px; }
+      main { padding: 0 16px 80px; }
+    }
+  </style>
+</head>
+<body>
+  <svg class="bg-facets" viewBox="0 0 1440 810" preserveAspectRatio="xMidYMid slice" fill="none" aria-hidden="true">
+    <polygon points="1035,0 1440,0 1440,620 1190,260" fill="#f0f7ff" />
+    <polygon points="1095,0 1440,0 1440,420 995,155" fill="#e8f3fe" fill-opacity="0.6" />
+    <polygon points="1240,0 1440,0 1440,210" fill="#e0effe" fill-opacity="0.5" />
+    <polygon points="0,120 355,810 0,810" fill="#f0f7ff" />
+    <polygon points="0,425 430,665 320,810 0,810" fill="#e8f3fe" fill-opacity="0.6" />
+    <polygon points="0,635 280,810 0,810" fill="#ddf0fe" fill-opacity="0.5" />
+  </svg>
+
+  <header>
+    <nav aria-label="Primary">
+      <a href="/">Home</a>
+      <a href="/dashboard">Dashboard</a>
+    </nav>
+  </header>
+
+  <main>
+    <h1 class="logo">Velo</h1>
+    <div class="search-wrapper">
+      <form class="search-form" id="search-form" action="/results" method="get" role="search">
+        <div class="search-box" id="search-box">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          <input
+            class="search-input"
+            id="search-input"
+            type="text"
+            name="q"
+            placeholder="Search the web or universities..."
+            aria-label="Search"
+            autocomplete="off"
+            autofocus
+          />
+          <div class="search-tools">
+            <button type="button" class="search-tool" id="voice-search" aria-label="Search by voice" title="Search by voice">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z" />
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                <line x1="12" y1="19" x2="12" y2="22" />
+              </svg>
+            </button>
+            <button type="button" class="search-tool" id="image-search" aria-label="Search by image" title="Search by image">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                <circle cx="12" cy="13" r="4" />
+              </svg>
+            </button>
+          </div>
+          <button type="button" class="clear-btn" id="clear-btn" aria-label="Clear">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+      </form>
+      <div class="autocomplete-dropdown" id="autocomplete-dropdown" role="listbox"></div>
+    </div>
+  </main>
+
+  <script>
+    const searchForm = document.getElementById('search-form');
+    const searchBox = document.getElementById('search-box');
+    const searchInput = document.getElementById('search-input');
+    const clearBtn = document.getElementById('clear-btn');
+    const dropdown = document.getElementById('autocomplete-dropdown');
+
+    function showSearchToolHint(message) {
+      const previous = searchInput.placeholder;
+      searchInput.placeholder = message;
+      searchInput.focus();
+      setTimeout(() => { searchInput.placeholder = previous; }, 2200);
+    }
+document.getElementById('voice-search').addEventListener('click', () => {
+      if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'ar-SA';
+        recognition.interimResults = false;
+        recognition.continuous = false;
+        recognition.maxAlternatives = 1;
+        
+        recognition.onresult = (event) => {
+          const transcript = event.results[0][0].transcript;
+          searchInput.value = transcript;
+          updateClearButton();
+          searchForm.submit();
+        };
+        
+        recognition.onerror = (event) => {
+          showSearchToolHint('Voice search error: ' + event.error);
+        };
+        
+        recognition.onend = () => {
+          // Clean up
+        };
+        
+        recognition.start();
+        showSearchToolHint('Listening...');
+      } else {
+        showSearchToolHint('Voice search not supported in this browser');
+      }
+    });
+    
+    document.getElementById('image-search').addEventListener('click', () => {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.addEventListener('change', (event) => {
+        const file = event.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            searchInput.value = 'Image uploaded: ' + file.name;
+            showSearchToolHint('Image search coming soon');
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+      input.click();
+    });
+
+    let debounceTimer = null;
+    let selectedIndex = -1;
+    let currentSuggestions = [];
+
+    function updateClearButton() {
+      clearBtn.classList.toggle('visible', searchInput.value.length > 0);
+    }
+
+    clearBtn.addEventListener('click', () => {
+      searchInput.value = '';
+      updateClearButton();
+      hideDropdown();
+      searchInput.focus();
+    });
+
+    const escapeHtml = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+    function showDropdown(items, prefix) {
+      currentSuggestions = items;
+      selectedIndex = -1;
+      if (!items || items.length === 0) {
+        hideDropdown();
+        return;
+      }
+
+      dropdown.innerHTML = '';
+      const lowerPrefix = prefix.toLowerCase();
+
+      items.forEach((item, index) => {
+        const div = document.createElement('div');
+        div.className = 'suggestion-item';
+        div.setAttribute('role', 'option');
+        div.setAttribute('data-index', index);
+
+        // Highlight matched prefix
+        let textHtml = escapeHtml(item);
+        const lowerItem = item.toLowerCase();
+        const matchIdx = lowerItem.indexOf(lowerPrefix);
+        if (matchIdx !== -1) {
+          const before = escapeHtml(item.slice(0, matchIdx));
+          const match = escapeHtml(item.slice(matchIdx, matchIdx + prefix.length));
+          const after = escapeHtml(item.slice(matchIdx + prefix.length));
+          textHtml = `${before}<strong>${match}</strong>${after}`;
+        }
+
+        div.innerHTML = `
+          <svg class="item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <span class="item-text">${textHtml}</span>
+        `;
+
+        div.addEventListener('click', () => {
+          searchInput.value = item;
+          searchForm.submit();
+        });
+
+        dropdown.appendChild(div);
+      });
+
+      dropdown.classList.add('visible');
+      searchBox.classList.add('has-suggestions');
+    }
+
+    function hideDropdown() {
+      dropdown.classList.remove('visible');
+      searchBox.classList.remove('has-suggestions');
+      selectedIndex = -1;
+    }
+
+    async function fetchSuggestions(query) {
+      if (!query || query.trim().length === 0) {
+        hideDropdown();
+        return;
+      }
+      try {
+        const res = await fetch(`/api/suggestions?q=${encodeURIComponent(query.trim())}&limit=8`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (searchInput.value.trim() === query.trim()) {
+          showDropdown(data.suggestions || [], query.trim());
+        }
+      } catch (e) {
+        console.error('Suggestions error:', e);
+      }
+    }
+
+    searchInput.addEventListener('input', () => {
+      updateClearButton();
+      clearTimeout(debounceTimer);
+      const val = searchInput.value;
+      if (!val || val.trim().length === 0) {
+        hideDropdown();
+        return;
+      }
+      debounceTimer = setTimeout(() => {
+        fetchSuggestions(val);
+      }, 100);
+    });
+
+    // Keyboard navigation
+    searchInput.addEventListener('keydown', (e) => {
+      if (!dropdown.classList.contains('visible') || currentSuggestions.length === 0) {
+        return;
+      }
+
+      const items = dropdown.querySelectorAll('.suggestion-item');
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        selectedIndex = (selectedIndex + 1) % items.length;
+        updateSelection(items);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        selectedIndex = (selectedIndex - 1 + items.length) % items.length;
+        updateSelection(items);
+      } else if (e.key === 'Escape') {
+        hideDropdown();
+      } else if (e.key === 'Enter') {
+        if (selectedIndex >= 0 && selectedIndex < currentSuggestions.length) {
+          e.preventDefault();
+          searchInput.value = currentSuggestions[selectedIndex];
+          searchForm.submit();
+        }
+      }
+    });
+
+    function updateSelection(items) {
+      items.forEach((item, idx) => {
+        if (idx === selectedIndex) {
+          item.classList.add('selected');
+          searchInput.value = currentSuggestions[idx];
+        } else {
+          item.classList.remove('selected');
+        }
+      });
+    }
+
+    // Click outside to close
+    document.addEventListener('click', (e) => {
+      if (!searchBox.contains(e.target) && !dropdown.contains(e.target)) {
+        hideDropdown();
+      }
+    });
+  </script>
+</body>
+</html>

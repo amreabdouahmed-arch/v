@@ -1,0 +1,16 @@
+.env
+.venv/
+.git/
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*.db
+*.db-shm
+*.db-wal
+*.db-journal
+*.sqlite
+*.sqlite3
+*.log
+training_data.jsonl
+tests/
+rust_search/target/

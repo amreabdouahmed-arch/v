@@ -1,0 +1,39 @@
+# Local secrets (never commit)
+.env
+.env.*
+!.env.example
+.env.local
+
+# Rust build artifacts
+rust_search/target/
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+
+# Local databases and dumps
+*.db
+*.db-shm
+*.db-wal
+*.db-journal
+*.sqlite
+*.sqlite3
+*.dump
+dumps/
+
+# Logs and backups
+*.log
+*.bak
+*.orig
+
+# Derived search index (rebuildable from TiDB)
+velo_index/
+
+# Large datasets (excluded; see README "Large files")
+training_data.jsonl
+Indexing/inverted_index.json
+
+# OS noise
+.DS_Store
+Thumbs.db

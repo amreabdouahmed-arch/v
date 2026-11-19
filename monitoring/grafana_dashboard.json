@@ -1,0 +1,76 @@
+"""
+monitoring/grafana_dashboard.json - Grafana dashboard for Search Engine
+"""
+
+{
+  "dashboard": {
+    "title": "Search Engine Monitoring",
+    "tags": ["search", "api", "monitoring"],
+    "timezone": "browser",
+    "schemaVersion": 16,
+    "version": 1,
+    "refresh": "10s",
+    "panels": [
+      {
+        "id": 1,
+        "title": "API Requests per Second",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "rate(api_requests_total[5m])",
+            "legendFormat": "Requests/sec"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0}
+      },
+      {
+        "id": 2,
+        "title": "Search Response Time",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(search_duration_seconds_bucket[5m]))",
+            "legendFormat": "95th percentile"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0}
+      },
+      {
+        "id": 3,
+        "title": "Active Crawlers",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "active_crawlers",
+            "legendFormat": "Crawlers"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 6, "x": 0, "y": 8}
+      },
+      {
+        "id": 4,
+        "title": "Database Size",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "pages_indexed_total",
+            "legendFormat": "Pages"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 6, "x": 6, "y": 8}
+      },
+      {
+        "id": 5,
+        "title": "Error Rate",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(api_errors_total[5m])",
+            "legendFormat": "Errors/sec"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8}
+      }
+    ]
+  }
+}

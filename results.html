@@ -1,0 +1,859 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Velo Search</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCI+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJnIiB4MT0iMCIgeTE9IjAiIHgyPSIxIiB5Mj0iMSI+PHN0b3Agb2Zmc2V0PSIwIiBzdG9wLWNvbG9yPSIjMjU2M2ViIi8+PHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjMzhiZGY4Ii8+PC9saW5lYXJHcmFkaWVudD48L2RlZnM+PHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiByeD0iMTUiIGZpbGw9InVybCgjZykiLz48Y2lyY2xlIGN4PSIyNyIgY3k9IjI3IiByPSIxMiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmZmZmIiBzdHJva2Utd2lkdGg9IjUiLz48bGluZSB4MT0iMzciIHkxPSIzNyIgeDI9IjQ5IiB5Mj0iNDkiIHN0cm9rZT0iI2ZmZmZmZiIgc3Ryb2tlLXdpZHRoPSI2IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48L3N2Zz4=" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg-canvas: #ffffff;
+        --text-main: #1e2329;
+        --text-muted: #6e7781;
+        --brand-blue: #7ea4c7;
+        --link-blue: #1a0dab;
+        --tab-active: #2b6ca3;
+        --url-green: #006621;
+        --pill-border: #7ebae4;
+        --border-hairline: #edf3f8;
+        --snippet-color: #4d5156;
+      }
+
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+
+      body {
+        min-height: 100vh;
+        background-color: var(--bg-canvas);
+        color: var(--text-main);
+        font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+        -webkit-font-smoothing: antialiased;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        overflow-x: hidden;
+      }
+
+      /* ─── Geometric background ─── */
+      .geometric-backdrop {
+        position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 0;
+      }
+      .facet-top-left  { position:absolute;top:0;left:0;width:34vw;max-width:460px;height:28vh;min-height:200px; }
+      .facet-bottom-left { position:absolute;bottom:0;left:0;width:38vw;max-width:520px;height:52vh;min-height:340px; }
+      .facet-right { position:absolute;top:0;right:0;width:34vw;max-width:520px;height:100%; }
+
+      /* ─── Header ─── */
+      .top-header {
+        position: relative; z-index: 20; width: 100%;
+        padding: 20px 32px 12px;
+      }
+      .header-inner {
+        display: flex; align-items: center; justify-content: space-between;
+        gap: 28px; flex-wrap: wrap;
+      }
+      .brand-logo {
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        font-size: 33px; line-height: 1; font-weight: 400;
+        letter-spacing: -0.02em; color: var(--brand-blue);
+        text-decoration: none; white-space: nowrap; flex-shrink: 0;
+        transition: color 180ms ease;
+      }
+      .brand-logo:hover { color: #4e7fae; }
+
+      /* ─── Search form + autocomplete wrapper ─── */
+      .search-form-wrapper {
+        flex: 1; max-width: 460px; margin: 0 auto; min-width: 240px;
+        position: relative;
+      }
+      .search-pill {
+        height: 42px; background: #fff; border-radius: 9999px;
+        border: 1.5px solid var(--pill-border);
+        box-shadow: 0 0 18px rgba(102,178,238,.34), 0 0 4px rgba(126,186,228,.25), inset 0 1px 2px rgba(255,255,255,.9);
+        display: flex; align-items: center; gap: 10px; padding: 0 16px;
+        transition: box-shadow 180ms cubic-bezier(.16,1,.3,1), border-color 180ms cubic-bezier(.16,1,.3,1);
+        position: relative; z-index: 20;
+      }
+      .search-pill:hover, .search-pill:focus-within {
+        border-color: #5ea7dc;
+        box-shadow: 0 0 24px rgba(94,167,220,.45), 0 0 6px rgba(94,167,220,.32), inset 0 1px 2px rgba(255,255,255,.95);
+      }
+      .search-pill.has-suggestions {
+        border-bottom-left-radius: 0; border-bottom-right-radius: 0;
+        border-bottom-color: #f1f5f9;
+      }
+      .search-icon { width:17px;height:17px;color:#7b8794;flex-shrink:0; }
+      .search-input {
+        width:100%; border:none; outline:none; background:transparent;
+        font-family:inherit; font-size:15px; color:var(--text-main);
+      }
+      .search-input::placeholder { color:#8a94a0; }
+      .search-tools { display:flex; align-items:center; gap:2px; flex-shrink:0; }
+      .search-tool {
+        display:flex; align-items:center; justify-content:center;
+        width:28px; height:28px; padding:0; border:none; border-radius:50%;
+        background:transparent; color:#8a94a0; cursor:pointer;
+        transition:background-color .15s ease, color .15s ease;
+      }
+      .search-tool:hover { color:var(--brand-blue); background:#eef6fd; }
+      .search-tool svg { width:16px; height:16px; }
+      .clear-btn {
+        background:none;border:none;color:#8a94a0;cursor:pointer;
+        display:none;padding:4px;line-height:1;
+      }
+      .clear-btn.visible { display:inline-flex; }
+      .clear-btn:hover { color:var(--text-main); }
+
+      /* ─── Autocomplete dropdown ─── */
+      .autocomplete-dropdown {
+        display: none;
+        position: absolute;
+        top: 41px; left: 0; right: 0;
+        background: #fff;
+        border: 1.5px solid #5ea7dc;
+        border-top: none;
+        border-bottom-left-radius: 20px;
+        border-bottom-right-radius: 20px;
+        box-shadow: 0 12px 28px rgba(94,167,220,.22);
+        z-index: 15;
+        overflow: hidden;
+        padding-bottom: 8px;
+      }
+      .autocomplete-dropdown.visible { display: block; }
+      .suggestion-item {
+        display: flex; align-items: center; gap: 12px;
+        padding: 10px 18px; cursor: pointer; font-size: 14px; color: #202124;
+        transition: background-color 0.1s ease;
+      }
+      .suggestion-item:hover, .suggestion-item.selected { background-color: #f1f5f9; }
+      .suggestion-item .s-icon { width:15px;height:15px;color:#94a3b8;flex-shrink:0; }
+      .suggestion-item .s-text { white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1; }
+      .suggestion-item .s-text strong { font-weight:600;color:#0f172a; }
+
+      /* ─── Header right actions ─── */
+      .header-actions { display:flex;align-items:center;gap:26px;flex-shrink:0; }
+      .top-nav { display:flex;align-items:center;gap:24px;font-size:15px; }
+      .top-nav a { color:var(--text-main);text-decoration:none;white-space:nowrap; }
+      .top-nav a:hover { color:var(--link-blue);text-decoration:underline;text-underline-offset:4px; }
+      .avatar-btn {
+        width:34px;height:34px;border-radius:9999px;border:none;
+        background-color:#b5bcc4;color:#fff;display:inline-flex;
+        align-items:center;justify-content:center;cursor:pointer;
+        transition:background-color 150ms ease;
+      }
+      .avatar-btn:hover { background-color:#9aa3ad; }
+
+      /* ─── Tabs ─── */
+      .tabs-bar {
+        position:relative;z-index:15;border-bottom:1px solid var(--border-hairline);
+        padding: 0 32px 0 13.5%;
+      }
+      .tabs-nav { display:flex;align-items:center;gap:28px;overflow-x:auto; }
+      .tab-link {
+        position:relative;padding:10px 0;border:0;background:transparent;
+        cursor:pointer;font-family:inherit;font-size:15px;
+        color:var(--text-main);text-decoration:none;white-space:nowrap;
+        flex-shrink:0;transition:color 150ms ease;
+      }
+      .tab-link:hover { color:var(--link-blue); }
+      .tab-link.active { color:var(--tab-active);font-weight:500; }
+      .tab-link.active::after {
+        content:'';position:absolute;left:0;right:0;bottom:0;height:2px;
+        background-color:var(--tab-active);border-radius:9999px;
+      }
+
+      /* ─── Results area ─── */
+      .results-main {
+        position:relative;z-index:10;flex:1;padding:26px 32px 64px 13.5%;
+      }
+      .results-column { max-width:660px;display:flex;flex-direction:column;gap:4px; }
+
+      .search-status {
+        min-height:20px;color:var(--text-muted);font-size:13px;margin-bottom:16px;
+      }
+      .spell-hint { font-size:14px;color:var(--text-muted);margin:-10px 0 14px; }
+      .spell-hint a { color:var(--link-blue);cursor:pointer;text-decoration:underline;text-underline-offset:3px; }
+      #search-results { display:flex;flex-direction:column;gap:0; }
+
+      /* ─── Google-style result card ─── */
+      .result-card {
+        padding: 14px 0;
+        border-bottom: none;
+        overflow-wrap: anywhere;
+      }
+      .result-meta-header {
+        display: flex; align-items: center; gap: 10px; margin-bottom: 4px;
+      }
+      .result-favicon {
+        width: 26px; height: 26px; border-radius: 50%;
+        background: linear-gradient(135deg, #2563eb 0%, #38bdf8 100%);
+        color: #fff; font-size: 11px; font-weight: 600;
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0; text-transform: uppercase; user-select: none;
+        position: relative; overflow: hidden;
+      }
+      .result-favicon img {
+        width: 100%; height: 100%; object-fit: contain;
+        padding: 3px; box-sizing: border-box; border-radius: 50%;
+        background: #fff;
+      }
+      .result-site-info { display:flex;flex-direction:column;gap:1px; }
+      .result-site-name { font-size:13px; color:#202124; font-weight:500; }
+      .result-breadcrumb { font-size:12px; color:var(--url-green); }
+
+      /* ─── Instant answer card ─── */
+      .instant-answer {
+        margin-bottom: 16px;
+        padding: 14px 18px;
+        border: 1.5px solid #e3eaf2;
+        border-left: 4px solid var(--link-blue);
+        border-radius: 10px;
+        background: linear-gradient(135deg, #f5faff 0%, #edf4ff 100%);
+        box-shadow: 0 1px 6px rgba(43,108,163,.06);
+      }
+      .answer-label {
+        font-size: 12px; font-weight: 600; color: var(--link-blue);
+        text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px;
+      }
+      .answer-content { font-size: 15px; line-height: 1.55; color: #1e2329; }
+      .answer-content a { color: var(--link-blue); font-weight: 500; }
+
+      .result-title {
+        display: block;
+        font-size: 20px;
+        line-height: 1.3;
+        font-weight: 400;
+        color: var(--link-blue);
+        text-decoration: none;
+        margin-bottom: 4px;
+      }
+      .result-title:hover { text-decoration: underline; text-underline-offset: 3px; }
+      .result-title.no-link { color: #1e2329; cursor: default; }
+
+      .result-snippet {
+        font-size: 14px;
+        line-height: 1.55;
+        color: var(--snippet-color);
+      }
+
+      /* ─── Load more ─── */
+      #load-more {
+        margin-top: 20px;
+        padding: 10px 28px;
+        border: 1.5px solid var(--pill-border);
+        border-radius: 9999px;
+        background: #fff;
+        color: var(--link-blue);
+        font-family: inherit;
+        font-size: 14px;
+        cursor: pointer;
+        transition: box-shadow 150ms ease;
+      }
+      #load-more:hover {
+        box-shadow: 0 2px 10px rgba(94,167,220,.3);
+      }
+
+      @media (max-width: 768px) {
+        .top-header { padding: 16px 20px 10px; }
+        .search-form-wrapper { order:3; flex-basis:100%; max-width:100%; }
+        .tabs-bar, .results-main { padding-left: 20px; padding-right: 20px; }
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- Geometric background -->
+    <div class="geometric-backdrop" aria-hidden="true">
+      <svg class="facet-top-left" viewBox="0 0 460 280" fill="none" preserveAspectRatio="none">
+        <polygon points="0,0 240,0 110,145 0,95" fill="#f3f9fe"/>
+        <polygon points="240,0 410,0 190,110 110,145" fill="#f8fcff"/>
+        <polygon points="0,95 110,145 0,240" fill="#ebf4fc"/>
+      </svg>
+      <svg class="facet-bottom-left" viewBox="0 0 520 500" fill="none" preserveAspectRatio="none">
+        <polygon points="0,120 140,340 0,500" fill="#eef6fc"/>
+        <polygon points="0,310 140,340 290,500 0,500" fill="#e6f2fb"/>
+        <polygon points="140,340 380,450 290,500" fill="#f2f8fd"/>
+        <polygon points="140,340 245,250 380,450" fill="#f7fbff"/>
+      </svg>
+      <svg class="facet-right" viewBox="0 0 520 900" fill="none" preserveAspectRatio="none">
+        <polygon points="120,0 520,0 520,310 310,175" fill="#f3f9fe"/>
+        <polygon points="310,175 520,310 520,680 390,460" fill="#eaf4fc"/>
+        <polygon points="160,185 310,175 390,460 275,355" fill="#f7fbff"/>
+        <polygon points="390,460 520,680 520,900 320,900" fill="#f0f7fd"/>
+        <polygon points="250,650 390,460 320,900 185,900" fill="#f8fcff"/>
+      </svg>
+    </div>
+
+    <!-- Header -->
+    <header class="top-header">
+      <div class="header-inner">
+        <a href="/" class="brand-logo">Velo</a>
+
+        <div class="search-form-wrapper">
+          <form class="search-form" id="search-form" action="/results" method="GET" role="search">
+            <div class="search-pill" id="search-pill">
+              <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              <input id="velo-search-input" class="search-input" type="text" name="q"
+                placeholder="Search..." aria-label="Search query" autocomplete="off"/>
+              <div class="search-tools">
+                <button type="button" class="search-tool" id="voice-search" aria-label="Search by voice" title="Search by voice">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/>
+                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                    <line x1="12" y1="19" x2="12" y2="22"/>
+                  </svg>
+                </button>
+                <button type="button" class="search-tool" id="image-search" aria-label="Search by image" title="Search by image">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                    <circle cx="12" cy="13" r="4"/>
+                  </svg>
+                </button>
+              </div>
+              <button id="velo-clear-btn" class="clear-btn" type="button" aria-label="Clear search">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            </div>
+          </form>
+          <!-- Autocomplete dropdown — rendered by JS below the pill -->
+          <div class="autocomplete-dropdown" id="autocomplete-dropdown" role="listbox"></div>
+        </div>
+
+        <div class="header-actions">
+          <nav class="top-nav" aria-label="Quick links">
+            <a href="/">Home</a>
+            <a href="/dashboard">Status</a>
+          </nav>
+          <a class="avatar-btn" href="/dashboard" aria-label="Search service status">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <!-- Tabs -->
+    <div class="tabs-bar">
+      <nav class="tabs-nav" aria-label="Search verticals">
+        <button type="button" class="tab-link active" data-mode="all">All</button>
+        <button type="button" class="tab-link" data-mode="semantic">Semantic</button>
+        <button type="button" class="tab-link" data-mode="news">News</button>
+        <button type="button" class="tab-link" data-mode="videos">Videos</button>
+        <button type="button" class="tab-link" data-mode="pdf">PDFs</button>
+        <button type="button" class="tab-link" data-mode="recent">Last 24h</button>
+      </nav>
+    </div>
+
+    <main class="results-main">
+      <section id="results-container" class="results-column" aria-label="Search results">
+        <p id="search-status" class="search-status" role="status" aria-live="polite"></p>
+        <div id="spell-hint" class="spell-hint" hidden></div>
+        <div id="instant-answer" class="instant-answer" hidden>
+          <div class="answer-label">⚡ Instant Answer</div>
+          <div id="answer-content"></div>
+        </div>
+        <div id="search-results"></div>
+        <button id="load-more" type="button" hidden>Load more results</button>
+      </section>
+    </main>
+
+    <script>
+      // ── State ──────────────────────────────────────────────────────────────
+      const searchInput   = document.getElementById('velo-search-input');
+      const clearBtn      = document.getElementById('velo-clear-btn');
+      const searchForm    = document.getElementById('search-form');
+      const searchPill    = document.getElementById('search-pill');
+      const dropdown      = document.getElementById('autocomplete-dropdown');
+      const searchStatus  = document.getElementById('search-status');
+      const spellHint     = document.getElementById('spell-hint');
+      const searchResults = document.getElementById('search-results');
+      const loadMore      = document.getElementById('load-more');
+      const tabs          = [...document.querySelectorAll('.tab-link')];
+
+      function showSearchToolHint(message) {
+        const previous = searchInput.placeholder;
+        searchInput.placeholder = message;
+        searchInput.focus();
+        setTimeout(() => { searchInput.placeholder = previous; }, 2200);
+      }
+
+      document.getElementById('voice-search').addEventListener('click', () => {
+      if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'ar-SA';
+        recognition.interimResults = false;
+        recognition.continuous = false;
+        recognition.maxAlternatives = 1;
+        
+        recognition.onresult = (event) => {
+          const transcript = event.results[0][0].transcript;
+          searchInput.value = transcript;
+          toggleClearBtn();
+          performSearch(transcript, 0);
+        };
+        
+        recognition.onerror = (event) => {
+          showSearchToolHint('Voice search error: ' + event.error);
+        };
+        
+        recognition.onend = () => {
+          // Clean up
+        };
+        
+        recognition.start();
+        showSearchToolHint('Listening...');
+      } else {
+        showSearchToolHint('Voice search not supported in this browser');
+      }
+    });
+    
+    document.getElementById('image-search').addEventListener('click', () => {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.addEventListener('change', (event) => {
+        const file = event.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            searchInput.value = 'Image uploaded: ' + file.name;
+            showSearchToolHint('Image search coming soon');
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+      input.click();
+    });
+
+      let searchMode      = new URLSearchParams(window.location.search).get('mode') === 'semantic'
+                            ? 'semantic' : 'keyword';
+      let currentQuery    = '';
+      let currentOffset   = 0;
+      let currentTotal    = 0;
+      let suggestTimer    = null;
+      let selectedIdx     = -1;
+      let currentSuggestions = [];
+      let searchSeq       = 0;
+      const pageSize      = 20;
+
+      // ── Helpers ────────────────────────────────────────────────────────────
+      function toggleClearBtn() {
+        clearBtn.classList.toggle('visible', searchInput.value.length > 0);
+      }
+
+      /** Extract a clean hostname for display, e.g. "timeshighereducation.com" */
+      function hostOf(rawUrl) {
+        try {
+          return new URL(rawUrl).hostname.replace(/^www\./, '');
+        } catch {
+          return rawUrl.split('/')[0] || 'velo';
+        }
+      }
+
+      /** Get first letter of a hostname for the favicon circle */
+      function faviconLetter(host) {
+        return (host || 'V').charAt(0).toUpperCase();
+      }
+
+      /**
+       * Build a human-readable snippet from whatever the API returns.
+       * Priority: description → snippet → content (cleaned)
+       */
+      function makeSnippet(result) {
+        const raw = result.description || result.snippet || result.content || '';
+        // Strip any leftover LLM tags like <|begin_of_text|> etc.
+        const stripped = raw.replace(/<\|[^>|]*\|>/g, '').replace(/\s+/g, ' ').trim();
+        // If the snippet starts with LLM boilerplate we don't want, skip it
+        const boring = /^(you are a helpful|system\s|user\s|assistant\s)/i;
+        if (boring.test(stripped)) return '';
+        return stripped.length > 260 ? stripped.slice(0, 260) + '…' : stripped;
+      }
+
+      // ── Build a Google-style result card ───────────────────────────────────
+      function showSpellHint(corrected) {
+        if (!corrected) {
+          spellHint.hidden = true;
+          spellHint.replaceChildren();
+          return;
+        }
+        const link = document.createElement('a');
+        link.textContent = corrected;
+        link.href = '#';
+        link.addEventListener('click', (event) => {
+          event.preventDefault();
+          spellHint.hidden = true;
+          searchInput.value = corrected;
+          searchForm.requestSubmit();
+        });
+        spellHint.replaceChildren('Did you mean ', link, '?');
+        spellHint.hidden = false;
+      }
+
+      function createResult(result) {
+        const card = document.createElement('article');
+        card.className = 'result-card';
+
+        const rawUrl = result.url || '';
+        const isHttp = rawUrl.startsWith('http://') || rawUrl.startsWith('https://');
+        const host   = isHttp ? hostOf(rawUrl) : (result.source || 'velo');
+        const letter = faviconLetter(host);
+
+        // --- meta header (favicon + site info) ---
+        const metaHeader = document.createElement('div');
+        metaHeader.className = 'result-meta-header';
+
+        const favicon = document.createElement('div');
+        favicon.className = 'result-favicon';
+        favicon.textContent = letter;
+        const faviconUrl = result.favicon || '';
+        if (faviconUrl) {
+          const icon = document.createElement('img');
+          icon.alt = '';
+          icon.loading = 'eager';
+          icon.decoding = 'async';
+          icon.referrerPolicy = 'no-referrer';
+          icon.src = faviconUrl;
+          icon.addEventListener('load', () => {
+            favicon.textContent = '';
+            favicon.appendChild(icon);
+          });
+          icon.addEventListener('error', () => {
+            // Keep the letter avatar as fallback when the icon fails to load.
+            favicon.textContent = letter;
+          });
+        }
+        metaHeader.appendChild(favicon);
+
+        const siteInfo = document.createElement('div');
+        siteInfo.className = 'result-site-info';
+        const siteName = document.createElement('span');
+        siteName.className = 'result-site-name';
+        siteName.textContent = host;
+        const breadcrumb = document.createElement('span');
+        breadcrumb.className = 'result-breadcrumb';
+        breadcrumb.textContent = isHttp ? rawUrl.slice(0, 70) : '';
+        siteInfo.appendChild(siteName);
+        siteInfo.appendChild(breadcrumb);
+        metaHeader.appendChild(siteInfo);
+        card.appendChild(metaHeader);
+
+        // --- title ---
+        const title = document.createElement('a');
+        title.className = 'result-title';
+        title.textContent = result.title || host || 'Untitled';
+        if (isHttp) {
+          title.href   = rawUrl;
+          title.target = '_blank';
+          title.rel    = 'noopener noreferrer';
+        } else {
+          title.className += ' no-link';
+        }
+        card.appendChild(title);
+
+        // --- snippet ---
+        const snippet = makeSnippet(result);
+        if (snippet) {
+          const snip = document.createElement('p');
+          snip.className = 'result-snippet';
+          snip.textContent = snippet;
+          card.appendChild(snip);
+        }
+
+        return card;
+      }
+
+      // ── Search ─────────────────────────────────────────────────────────────
+      async function search(query, append = false) {
+        const seq = ++searchSeq;
+        const q = query.trim();
+        if (!q) {
+          searchResults.replaceChildren();
+          searchStatus.textContent = '';
+          loadMore.hidden = true;
+          showSpellHint(null); currentQuery = ''; currentOffset = 0; currentTotal = 0; history.replaceState(null, '', '/results');
+          return;
+        }
+        searchInput.value = q;
+        if (!append) {
+          currentQuery  = q;
+          currentOffset = 0;
+          currentTotal  = 0;
+          loadMore.hidden = true;
+          spellHint.hidden = true;
+          searchResults.replaceChildren();
+        }
+        toggleClearBtn();
+        searchStatus.textContent = 'Searching…';
+        const modeParam = searchMode === 'semantic' ? '&mode=semantic' : '';
+        history.replaceState(null, '', `/results?q=${encodeURIComponent(q)}${modeParam}`);
+
+        try {
+          const endpoint = searchMode === 'semantic' ? '/search/semantic' : '/search';
+          const res = await fetch(`${endpoint}?q=${encodeURIComponent(q)}&limit=${pageSize}&offset=${currentOffset}`);
+          if (seq !== searchSeq) return;
+          if (!res.ok) {
+            if (res.status === 503 && searchMode === 'semantic') {
+              searchStatus.textContent = 'Semantic search is unavailable.';
+              return;
+            }
+            throw new Error(`HTTP ${res.status}`);
+          }
+          const data = await res.json();
+          if (seq !== searchSeq) return;
+          if (!append) {
+            showSpellHint(data.corrected_query);
+            showInstantAnswer(data);
+          }
+          currentTotal = data.total_count || 0;
+
+          if (!Array.isArray(data.results) || data.results.length === 0) {
+            if (append) { loadMore.hidden = true; searchStatus.textContent = 'No more results.'; }
+            else { searchStatus.textContent = 'No results found. Try a different search.'; }
+            return;
+          }
+
+          const nextOffset = currentOffset + data.results.length;
+          const hasMore = typeof data.has_more === 'boolean'
+            ? data.has_more : nextOffset < currentTotal;
+
+          searchStatus.textContent = `${currentTotal.toLocaleString()} results · ${data.search_time_ms} ms`;
+          searchResults.append(...data.results.map(createResult));
+          currentOffset = nextOffset;
+          loadMore.hidden = !hasMore;
+        } catch (err) {
+          if (seq !== searchSeq) return;
+          searchStatus.textContent = 'Search is temporarily unavailable. Please try again.';
+          console.error('Search error:', err);
+        }
+      }
+
+      // ── Instant answer: show a featured snippet at top ──────────────────────
+      function showInstantAnswer(data) {
+        const box = document.getElementById('instant-answer');
+        const content = document.getElementById('answer-content');
+        if (!box || !content) return;
+        const results = data.results || [];
+        if (!results.length) {
+          box.hidden = true;
+          return;
+        }
+        const top = results[0];
+        const snippet = top.content || top.description || '';
+        if (!snippet || snippet.length < 20) {
+          box.hidden = true;
+          return;
+        }
+        const url = top.url || '';
+        content.innerHTML = '';
+        const p = document.createElement('p');
+        p.textContent = snippet.slice(0, 320) + (snippet.length > 320 ? '…' : '');
+        content.appendChild(p);
+        if (url) {
+          const a = document.createElement('a');
+          a.href = url;
+          a.textContent = top.title || hostOf(url);
+          a.style.fontSize = '13px';
+          content.appendChild(a);
+        }
+        box.hidden = false;
+      }
+
+      // ── Autocomplete dropdown ──────────────────────────────────────────────
+      function hideDropdown() {
+        dropdown.classList.remove('visible');
+        searchPill.classList.remove('has-suggestions');
+        selectedIdx = -1;
+      }
+
+      function showDropdown(items, prefix) {
+        currentSuggestions = items;
+        selectedIdx = -1;
+        if (!items || items.length === 0) { hideDropdown(); return; }
+
+        dropdown.innerHTML = '';
+        const lowerPrefix = prefix.toLowerCase();
+
+        items.forEach((item, idx) => {
+          const div = document.createElement('div');
+          div.className = 'suggestion-item';
+          div.setAttribute('role', 'option');
+
+          const lowerItem = item.toLowerCase();
+          const matchIdx  = lowerItem.indexOf(lowerPrefix);
+          let textHtml = escapeHtml(item);
+          if (matchIdx !== -1) {
+            const before = escapeHtml(item.slice(0, matchIdx));
+            const match  = escapeHtml(item.slice(matchIdx, matchIdx + prefix.length));
+            const after  = escapeHtml(item.slice(matchIdx + prefix.length));
+            textHtml = `${before}<strong>${match}</strong>${after}`;
+          }
+
+          div.innerHTML = `
+            <svg class="s-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <span class="s-text">${textHtml}</span>`;
+
+          div.addEventListener('mousedown', (e) => {
+            e.preventDefault(); // prevent blur before click
+            searchInput.value = item;
+            hideDropdown();
+            search(item);
+          });
+          dropdown.appendChild(div);
+        });
+
+        dropdown.classList.add('visible');
+        searchPill.classList.add('has-suggestions');
+      }
+
+      function escapeHtml(str) {
+        return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      }
+
+      function updateSelection(items) {
+        items.forEach((item, idx) => {
+          if (idx === selectedIdx) {
+            item.classList.add('selected');
+            searchInput.value = currentSuggestions[idx];
+          } else {
+            item.classList.remove('selected');
+          }
+        });
+      }
+
+      async function fetchSuggestions(prefix) {
+        if (!prefix || prefix.trim().length < 2) { hideDropdown(); return; }
+        try {
+          const res = await fetch(`/api/suggestions?q=${encodeURIComponent(prefix.trim())}&limit=8`);
+          if (!res.ok) return;
+          const data = await res.json();
+          if (searchInput.value.trim().toLowerCase() === prefix.trim().toLowerCase()) {
+            showDropdown(data.suggestions || [], prefix.trim());
+          }
+        } catch (e) {
+          console.error('Suggestions error:', e);
+        }
+      }
+
+      // ── Event listeners ────────────────────────────────────────────────────
+      searchInput.addEventListener('input', () => {
+        toggleClearBtn();
+        clearTimeout(suggestTimer);
+        const val = searchInput.value;
+        if (!val || val.trim().length < 2) { hideDropdown(); return; }
+        suggestTimer = setTimeout(() => fetchSuggestions(val), 150);
+      });
+
+      searchInput.addEventListener('keydown', (e) => {
+        if (!dropdown.classList.contains('visible')) return;
+        const items = dropdown.querySelectorAll('.suggestion-item');
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          selectedIdx = (selectedIdx + 1) % items.length;
+          updateSelection(items);
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          selectedIdx = (selectedIdx - 1 + items.length) % items.length;
+          updateSelection(items);
+        } else if (e.key === 'Escape') {
+          hideDropdown();
+        } else if (e.key === 'Enter' && selectedIdx >= 0) {
+          e.preventDefault();
+          searchInput.value = currentSuggestions[selectedIdx];
+          hideDropdown();
+          search(searchInput.value);
+        }
+      });
+
+      searchInput.addEventListener('blur', () => {
+        setTimeout(hideDropdown, 200);
+      });
+
+      clearBtn.addEventListener('click', () => {
+        searchInput.value = '';
+        toggleClearBtn();
+        hideDropdown();
+        searchResults.replaceChildren();
+        searchStatus.textContent = '';
+        loadMore.hidden = true; showSpellHint(null);
+        currentQuery = ''; currentOffset = 0; currentTotal = 0;
+        history.replaceState(null, '', '/results');
+        searchInput.focus();
+      });
+
+      searchForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        hideDropdown();
+        search(searchInput.value);
+      });
+
+      loadMore.addEventListener('click', () => search(currentQuery, true));
+
+      tabs.forEach((tab) => {
+        tab.addEventListener('click', () => {
+          searchMode = tab.dataset.mode;
+          tabs.forEach((t) => t.classList.toggle('active', t === tab));
+          if (searchInput.value.trim()) search(searchInput.value);
+        });
+      });
+
+      // ── Smart filter: filter rendered results by tab ─────────────────────
+      function applyFilter(mode) {
+        const cards = searchResults.querySelectorAll('.result-card');
+        cards.forEach((card, idx) => {
+          const url = card.querySelector('.result-title')?.href || '';
+          const title = card.querySelector('.result-title')?.textContent || '';
+          let show = true;
+          switch (mode) {
+            case 'news':
+              show = /\b(news|times|daily|post|herald|tribune|journal|report|press|agency|cnn|bbc|reuters)\b/i.test(url) || /\b(news|today|update|latest)\b/i.test(title);
+              break;
+            case 'videos':
+              show = /\b(youtube|vimeo|dailymotion|twitch)\b/i.test(url) || /\b(video|watch|stream|episode|clip)\b/i.test(title);
+              break;
+            case 'pdf':
+              show = /\.pdf(\?|$)/i.test(url);
+              break;
+            case 'recent':
+              // Client-side: show all (server-side date filtering would go here)
+              show = true;
+              break;
+            default:
+              show = true;
+          }
+          card.style.display = show ? '' : 'none';
+        });
+      }
+
+      // Click outside to close dropdown
+      document.addEventListener('click', (e) => {
+        if (!searchPill.contains(e.target) && !dropdown.contains(e.target)) {
+          hideDropdown();
+        }
+      });
+
+      // ── Init ───────────────────────────────────────────────────────────────
+      const initialQuery = new URLSearchParams(window.location.search).get('q');
+      tabs.forEach((tab) => tab.classList.toggle('active', tab.dataset.mode === searchMode));
+      if (initialQuery) search(initialQuery);
+    </script>
+  </body>
+</html>
