@@ -62,16 +62,50 @@ Reusable Rust implementations for search, NLP, and maintenance:
 - **`text_utils.rs`** — Additional text processing helpers
 
 ### Data Flow
-1. **Crawl** → pages stored in TiDB (`search_documents`) and/or MongoDB (`Crawled_Pages`)
-2. **Index** → Tantivy index (`velo_index/`) rebuilt from cloud on empty start; semantic vectors built in-memory
-3. **Search** → federated query across TiDB full-text, MongoDB text, Tantivy, semantic vectors
-4. **Rank** → combined scores + PageRank authority boost + spell-correction retry + synonym expansion
-5. **Suggest** → in-memory popularity + content-word completions + spell-corrected prefixes
 
-### Cloud Stores as Source of Truth
-- TiDB Cloud and MongoDB Atlas are the **only** persistent stores
-- `velo_index/` (Tantivy) and semantic index are **derived caches** rebuilt automatically
-- SQLite (`backrub.db`) is read-only for legacy migration only
+**At startup** (`rust_search/src/main.rs`):
+1. Load `.env` from the working directory (`main.rs:42`).
+2. Connect to TiDB (`main.rs:61-66`) and MongoDB (`main.rs:67-72`) and open the
+   local Tantivy index.
+3. Apply the rebuild policy `TANTIVY_REBUILD` (`main.rs:110-135`).
+4. Load the PageRank score table into memory (`main.rs:185-190`).
+5. Build the derived semantic index in memory unless `SEMANTIC_MODE=off` or
+   `SEMANTIC_INDEX=off` (`main.rs:191-226`).
+6. Bind the HTTP listener (`main.rs:277`).
+
+**On ingest** (`rust_search/src/ingest.rs`):
+1. Canonicalize the URL, hash it, and normalize the text (`ingest.rs:69-106`).
+2. Deterministically route a `MONGO_PARTITION_PERCENT` slice of documents to
+   MongoDB and delete the duplicate TiDB row (`ingest.rs:123-181`).
+3. Upsert the remaining documents into TiDB `search_documents` (`ingest.rs:188-201`).
+4. Add the document to the Tantivy index in memory (`ingest.rs:92-101`).
+
+**On search** (`rust_search/src/routes.rs`):
+1. The local Tantivy and semantic engines answer first (`routes.rs:250-280`).
+2. Cloud stores are queried only when the local result set is sparse
+   (`routes.rs:285-310`).
+3. Results are merged, boosted by domain trust and PageRank, then returned
+   (`routes.rs:312-340`).
+
+### What lives where
+
+| Store | Contents | Authority |
+|---|---|---|
+| TiDB `search_documents` | Canonical rows: url, title, description, content, `search_text`, language, status, `crawled_at`, `content_hash`, `source_metadata_json` (`tidb.rs:85-99`) | **Authoritative** |
+| MongoDB `Crawled_Pages` | Documents in the `MONGO_PARTITION_PERCENT` slice (default 20%), written *instead of* TiDB; also the search backend when `SEARCH_BACKEND=mongodb` (`ingest.rs:123-181`, `mongo.rs:45-60`) | Authoritative for its own slice in the current code — see risk below |
+| MongoDB `velo_crawl_queue` | Durable crawl queue (`mongo.rs:60`, `ingest.rs:328-360`) | Authoritative for queue state |
+| `velo_index/` (Tantivy) | Derived full-text index: `id`, `title`, `url`, `body` (`tantivy_engine.rs:295-307`) | Derived, rebuildable |
+| Semantic index | Derived TF-IDF vectors held in memory (`ported/semantic.rs`) | Derived, rebuildable |
+| Process memory | Spell-check vocabulary, suggester maps, search cache, PageRank scores, recent queries (`state.rs:20-40`) | Derived, rebuilt at startup |
+
+**Rebuild rule:** the Tantivy and semantic indexes MUST be rebuildable from TiDB.
+The current rebuild path reads TiDB *and* MongoDB (`main.rs:123-129`), which is
+only correct while every document also exists in TiDB.
+
+> **Open risk (M0 finding):** `ingest.rs:123-181` writes up to
+> `MONGO_PARTITION_PERCENT` (default 20%) of documents to MongoDB **instead of**
+> TiDB and deletes the TiDB row. Rebuilding from TiDB alone would lose that
+> slice. This needs a decision before M1.
 
 ## Run locally
 
@@ -91,12 +125,61 @@ Reusable Rust implementations for search, NLP, and maintenance:
 3. Open `/` for the home page, `/results` for search results, `/dashboard` for
    status, or `/docs` for the API overview.
 
+### Prerequisites
+
+- Rust 1.85+ (edition 2021). The toolchain is not pinned in the repo.
+- A reachable TiDB (MySQL protocol) server, or MongoDB Atlas, depending on
+  `SEARCH_BACKEND`.
+- No Node.js and no frontend build step: the UI is three static HTML files at
+  the repo root.
+
+### Environment
+
+Copy `.env.example` to `.env` and fill it in. The binary loads `.env` from the
+working directory (`main.rs:42`). With `SEARCH_BACKEND=tidb` the required
+variables are `TIDB_HOST`, `TIDB_USER`, `TIDB_PASSWORD` and `TIDB_DATABASE`.
+Set `ADMIN_TOKEN` before using any `/admin/*` route. `.env` is git-ignored and
+must never be committed.
+
+### Build, test, run
+
+```powershell
+cargo test    --locked --manifest-path rust_search/Cargo.toml
+cargo clippy  --locked --manifest-path rust_search/Cargo.toml --all-targets -- -D warnings
+cargo run     --locked --manifest-path rust_search/Cargo.toml
+```
+
+### Example requests
+
+```powershell
+curl.exe "http://127.0.0.1:8000/api/stats"
+curl.exe "http://127.0.0.1:8000/search?q=harvard&limit=5"
+curl.exe "http://127.0.0.1:8000/search/semantic?q=harvard"
+curl.exe "http://127.0.0.1:8000/api/suggestions?q=lwv&limit=8"
+curl.exe -H "X-Admin-Token: $env:ADMIN_TOKEN" "http://127.0.0.1:8000/admin/dashboard"
+```
+
+### Fast startup for local development
+
+The derived semantic index is built during startup and takes minutes on a full
+corpus. Skip it while iterating:
+
+```powershell
+$env:SEMANTIC_INDEX='off'
+cargo run --locked --manifest-path rust_search/Cargo.toml
+```
+
+Keyword search, autocomplete and ranking keep working; only semantic search is
+unavailable. Use `SEMANTIC_MAX_DOCUMENTS` (alias `SEMANTIC_MAX_PAGES`) to cap
+the build instead of skipping it.
+
 Set `SEARCH_BACKEND=tidb` to use TiDB Cloud and optionally partition documents
 to MongoDB Atlas with `MONGO_PARTITION_PERCENT`. Set `SEARCH_BACKEND=mongodb`
-to use MongoDB alone. The server requires the matching cloud credentials; the
-local Tantivy index (`velo_index/`) and the in-memory semantic index are
-derived caches rebuilt from those cloud stores, which remain the source of
-truth.
+to use MongoDB alone. The server requires the matching cloud credentials. The
+local Tantivy index (`velo_index/`) and the in-memory semantic index are derived
+caches rebuilt from the cloud stores. TiDB is the authoritative document store;
+MongoDB currently holds a deterministic partition of documents and the crawl
+queue (see "What lives where" for the open risk this creates).
 
 Docker builds and runs the Rust binary directly:
 
