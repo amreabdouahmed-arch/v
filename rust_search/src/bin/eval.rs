@@ -145,6 +145,20 @@ struct RunRecord {
     results: Vec<QueryResult>,
 }
 
+/// Output written to baseline.json: metadata + aggregate metrics only,
+/// no raw result hits.
+#[derive(Debug, Serialize)]
+struct BaselineOutput {
+    timestamp: String,
+    git_commit: Option<String>,
+    doc_counts: DocCounts,
+    env_flags: HashMap<String, String>,
+    config: HashMap<String, String>,
+    overall: Metrics,
+    slices: HashMap<String, Metrics>,
+    pool: PoolStats,
+}
+
 // Metric primitives (pure, unit-tested)
 // ---------------------------------------------------------------------------
 
@@ -1262,7 +1276,20 @@ async fn main() -> Result<()> {
         results,
     };
 
+    // Baseline output: metadata + aggregate metrics only, no raw results
+    let baseline_output = BaselineOutput {
+        timestamp: record.timestamp.clone(),
+        git_commit: record.git_commit.clone(),
+        doc_counts: record.doc_counts.clone(),
+        env_flags: record.env_flags.clone(),
+        config: record.config.clone(),
+        overall: record.overall.clone(),
+        slices: record.slices.clone(),
+        pool: record.pool.clone(),
+    };
+
     let text = serde_json::to_string_pretty(&record)?;
+    let baseline_text = serde_json::to_string_pretty(&baseline_output)?;
     let target = if baseline {
         out_dir.join("baseline.json")
     } else {
@@ -1274,6 +1301,9 @@ async fn main() -> Result<()> {
         ))
     };
     std::fs::write(&target, &text)?;
+    if baseline {
+        std::fs::write(&out_dir.join("baseline.json"), &baseline_text)?;
+    }
     println!("eval: wrote {}", target.display());
     print_report(&record);
 
@@ -1752,5 +1782,26 @@ mod tests {
         assert_eq!(stats.rows, 1);
         assert_eq!(stats.labeled_rows, 1);
         assert!((stats.coverage - 1.0).abs() < 1e-9);
+    }
+
+    #[test]
+    fn baseline_output_has_no_raw_results() {
+        use serde_json::json;
+        let baseline_bytes = std::fs::read_to_string("eval/baseline.json").unwrap();
+        let value = json::from_str::<serde_json::Value>(&baseline_bytes).unwrap();
+        // Verify no raw result fields exist in the baseline output
+        let results = value.get("results");
+        assert!(results.is_none(), "baseline.json should not have a 'results' field");
+        let overall = value.get("overall").unwrap();
+        // Check that hit-level fields are absent
+        for key in &["ndcg", "mrr", "recall", "precision", "latency_ms", "server_ms"] {
+            assert!(overall.get(key).is_some(), "baseline.json should have metric: {}", key);
+        }
+        // Verify no hit-level fields leaked in
+        for key in &["id", "query", "lang", "intent", "hits", "url", "title", "snippet"] {
+            for slice_value in value.get("slices").unwrap().as_object().unwrap().values() {
+                assert!(!slice_value.as_object().unwrap().contains_key(key), "baseline.json slice should not have '{}'", key);
+            }
+        }
     }
 }
