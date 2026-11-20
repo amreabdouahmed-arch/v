@@ -30,6 +30,10 @@ dumps/
 # Derived search index (rebuildable from TiDB)
 velo_index/
 
+# Evaluation artifacts (regenerated; only baseline.json is committed)
+eval/runs/
+eval/pool/
+
 # Large datasets (excluded; see README "Large files")
 training_data.jsonl
 Indexing/inverted_index.json
