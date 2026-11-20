@@ -14,13 +14,19 @@ cargo run --locked --manifest-path rust_search/Cargo.toml
 # 2. label coverage of the current query set against the corpus
 cargo run --locked --manifest-path rust_search/Cargo.toml --bin eval -- --coverage-only
 
-# 3. build the labelling pool (top-30 per query) for the Owner
-cargo run --locked --manifest-path rust_search/Cargo.toml --bin eval -- --pool
+# 3. build the pool from one or more named servers (top-10 per query by default)
+cargo run --locked --manifest-path rust_search/Cargo.toml --bin eval -- --pool --top 10 --base-url hybrid=http://127.0.0.1:8000
 
-# 4. after labels are filled in, record a run
+# 4. split the pool into labeler chunks (owner + silver)
+cargo run --locked --manifest-path rust_search/Cargo.toml --bin eval -- --labeling-sheet
+
+# 5. after labels are filled in, apply them back to the query set
+cargo run --locked --manifest-path rust_search/Cargo.toml --bin eval -- --apply-labels eval/pool/labels.csv
+
+# 6. record a run
 cargo run --locked --manifest-path rust_search/Cargo.toml --bin eval --
 
-# 5. compare a change against the committed baseline
+# 7. compare a change against the committed baseline
 cargo run --locked --manifest-path rust_search/Cargo.toml --bin eval -- --compare eval/baseline.json
 ```
 
@@ -33,7 +39,10 @@ cargo run --locked --manifest-path rust_search/Cargo.toml --bin eval -- --compar
 |---|---|
 | `queries.jsonl` | frozen v1 query set: 115 queries, one JSON object per line, **unlabelled** |
 | `extra_urls.csv` | `query_id,url,grade` — known-good URLs supplied by the Owner |
-| `pool/pool.csv` | generated labelling pool: `query_id,query,url,title,snippet,rank,grade,labeler` |
+| `pool/pool.csv` | generated pool: `pid,query_id,query,url,title,snippet,rank,mode,grade,labeler` |
+| `pool/chunks/owner_NN.csv` | generated Owner sheets: `pid,query_id,query,url,title,snippet,grade` |
+| `pool/chunks/silver_NN.csv` | generated silver sheets: same columns, Tech Lead labels them |
+| `pool/labels.csv` | returned labels: `pid,grade,labeler` (labeler is `owner` or `silver`) |
 | `runs/<timestamp>.json` | generated run record: git commit, doc counts, env flags, raw hits, metrics |
 | `baseline.json` | committed reference run used by `--compare` |
 | `coverage_gaps.jsonl` | generated: labelled URLs (grade ≥ 2) that are missing from the corpus |
@@ -64,7 +73,8 @@ by the median top-10 age metric, not folded into the grade.
 
 ```json
 {"id":"q001","query":"جامعة القاهرة","lang":"ar","intent":"navigational",
- "freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
+ "freshness_sensitive":false,"label_source":"mixed",
+ "labels":{"example.com/page":2},"labelers":{"example.com/page":"owner"}}
 ```
 
 `labels` maps a **canonical URL** to a grade:
@@ -76,9 +86,40 @@ by the median top-10 age metric, not folded into the grade.
 | 2 | relevant (answers the query) |
 | 3 | highly relevant (authoritative, complete) |
 
-`label_source` is `owner`, `silver`, `mixed` or `unlabeled`. The harness never
-assigns grades; labelling is done by the Owner (`ar-eg` and `arabizi`) and the
-Tech Lead (all other queries).
+`labelers` maps each labelled canonical URL to the person who graded it:
+`owner` or `silver`. `label_source` is the per-query summary: `owner` when every
+label is the Owner's, `silver` when every label is the Tech Lead's, `mixed` when
+both appear, and `unlabeled` when the query has no grades. The harness never
+assigns grades.
+
+## Labelling workflow
+
+The pool comes from the systems we run. `--pool` accepts any number of named
+servers, for example:
+
+```powershell
+cargo run --locked --manifest-path rust_search/Cargo.toml --bin eval -- --pool --top 10 `
+  --base-url hybrid=http://127.0.0.1:8000 `
+  --base-url local=http://127.0.0.1:8001
+```
+
+Results are merged and deduplicated by canonical URL. A URL found by more than
+one system keeps its best rank and lists every mode in the `mode` column
+(`hybrid+local`). Rows from `extra_urls.csv` are added with mode `extra`.
+
+`--labeling-sheet` writes the pool into `eval/pool/chunks/`:
+
+- `owner_NN.csv` holds `ar-eg` and `arabizi` queries (the Owner's gold set).
+- `silver_NN.csv` holds every other query (the Tech Lead's silver set).
+- Each chunk has at most 100 data rows and columns
+  `pid,query_id,query,url,title,snippet,grade`.
+- Rows are shuffled within each query with a fixed seed. Rank and mode are not
+  included, so labelers do not see system order.
+
+Fill only the `grade` column (0-3) and return the file as
+`pid,grade,labeler`; `--apply-labels` validates the grades, rejects unknown
+`pid`s and conflicting duplicates, canonicalizes URLs, and writes `labels` and
+`labelers` into `queries.jsonl`.
 
 ## Canonical URL rule
 
@@ -104,20 +145,21 @@ Unit tests cover each rule.
 | Zero-result rate | share of queries returning 0 hits |
 | Latency p50 / p95 | wall-clock per query, measured from this machine |
 | Coverage | labelled URLs with grade ≥ 2 that exist in TiDB ∪ MongoDB |
+| Label coverage | pool rows whose URL has a grade ÷ all pool rows |
 | Median top-10 age | median `crawled_at` age of top-10 hits, reported for `freshness_sensitive` queries |
 
 Metrics are reported overall and per slice (`lang:*`, `intent:*`,
-`freshness:true|false`).
+`freshness:true|false`, `labeler:owner|silver|mixed|unlabeled`).
 
 Queries with no label with grade ≥ 1 are excluded from the ranking averages
 (they measure coverage, not ranking).
 
 ## Pooling bias
 
-`--pool` records the **top 30 of the current engine** for each query. Pooling
-this way over-represents documents the engine already ranks highly and can
-never discover a relevant document the engine fails to return at all. It is
-good enough for comparing changes to the same engine, but absolute recall
+`--pool` records the **top N (default 10) of each configured system** for every
+query. Pooling this way over-represents documents the systems already rank
+highly and can never discover a relevant document they fail to return at all.
+It is good enough for comparing changes to the same systems, but absolute recall
 numbers are optimistic. `extra_urls.csv` is the escape hatch: add URLs the
 engine misses.
 
