@@ -13,11 +13,11 @@ jobs:
     name: Test and lint (Rust)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: dtolnay/rust-toolchain@stable
         with:
-          components: clippy
+          components: clippy, rustfmt
 
       - uses: Swatinem/rust-cache@v2
         with:
@@ -45,6 +45,7 @@ jobs:
           done
 
       - name: Run clippy
+        id: clippy
         shell: bash
         run: |
           set -o pipefail
@@ -61,11 +62,28 @@ jobs:
           n=$(wc -l < ann2.txt)
           printf '::notice title=clippy-count::diagnostic lines: %s\n' "$n"
           if [ "$n" -eq 0 ]; then
-            tail -n 10 plain.txt | while IFS= read -r l; do
-              l="${l//%/%25}"; printf '::error title=clippy-tail::%s\n' "$l"
-            done
+            if [ "${{ steps.clippy.outcome }}" = "failure" ]; then
+              tail -n 10 plain.txt | while IFS= read -r l; do
+                l="${l//%/%25}"; printf '::error title=clippy-tail::%s\n' "$l"
+              done
+            else
+              printf '::notice title=clippy-clean::no diagnostics\n'
+            fi
           else
-            head -n 9 ann2.txt | while IFS= read -r l; do
+            head -n 10 ann2.txt | while IFS= read -r l; do
               l="${l//%/%25}"; printf '::error title=cargo-clippy::%s\n' "$l"
             done
           fi
+
+      - name: Formatting report (diagnostic only)
+        if: always()
+        continue-on-error: true
+        shell: bash
+        run: |
+          cargo fmt --check --manifest-path rust_search/Cargo.toml > fmt.txt 2>&1 || true
+          grep '^Diff in' fmt.txt | sed -E 's/^Diff in (.*) at line [0-9]+:.*/\1/' | sort -u > fmt-files.txt || true
+          n=$(wc -l < fmt-files.txt)
+          printf '::notice title=fmt-count::files needing formatting: %s\n' "$n"
+          head -n 8 fmt-files.txt | while IFS= read -r l; do
+            l="${l//%/%25}"; printf '::notice title=fmt-file::%s\n' "$l"
+          done
