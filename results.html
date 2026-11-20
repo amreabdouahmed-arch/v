@@ -855,5 +855,50 @@
       tabs.forEach((tab) => tab.classList.toggle('active', tab.dataset.mode === searchMode));
       if (initialQuery) search(initialQuery);
     </script>
+
+    <script>
+      // Search history (localStorage only). A query is recorded only when the
+      // search actually produced results, so failed or empty searches are not
+      // remembered.
+      (function () {
+        var RECENT_KEY = 'velo_recent_queries';
+        var RECENT_MAX = 12;
+
+        function loadRecent() {
+          try {
+            var parsed = JSON.parse(window.localStorage.getItem(RECENT_KEY) || '[]');
+            return Array.isArray(parsed) ? parsed.filter(function (v) { return typeof v === 'string'; }) : [];
+          } catch (err) {
+            return [];
+          }
+        }
+
+        function addRecent(value) {
+          var text = (value || '').trim();
+          if (!text) return;
+          var key = text.toLowerCase();
+          var next = [text].concat(loadRecent().filter(function (item) {
+            return item.trim().toLowerCase() !== key;
+          }));
+          try {
+            window.localStorage.setItem(RECENT_KEY, JSON.stringify(next.slice(0, RECENT_MAX)));
+          } catch (err) {
+            /* storage unavailable: history is best-effort */
+          }
+        }
+
+        var originalSearch = window.search;
+        if (typeof originalSearch === 'function') {
+          window.search = function (query) {
+            var outcome = originalSearch.apply(this, arguments);
+            Promise.resolve(outcome).then(function () {
+              var box = document.getElementById('search-results');
+              if (box && box.children.length > 0) { addRecent(query); }
+            }).catch(function () { /* failed search: nothing recorded */ });
+            return outcome;
+          };
+        }
+      })();
+    </script>
   </body>
 </html>

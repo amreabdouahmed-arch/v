@@ -236,6 +236,46 @@
       flex-shrink: 0;
     }
 
+    .suggestion-heading {
+      padding: 10px 20px 6px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #94a3b8;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .suggestion-note {
+      padding: 8px 20px;
+      font-size: 12px;
+      color: #94a3b8;
+      border-top: 1px solid #e2e8f0;
+    }
+
+    .suggestion-clear {
+      color: #dc2626;
+      border-top: 1px solid #e2e8f0;
+    }
+
+    .history-remove {
+      border: none;
+      background: transparent;
+      color: #94a3b8;
+      font-size: 16px;
+      line-height: 1;
+      cursor: pointer;
+      padding: 0 4px;
+    }
+
+    .history-remove:hover {
+      color: #dc2626;
+    }
+
+    #autocomplete-dropdown[dir="rtl"] .item-text,
+    #autocomplete-dropdown[dir="rtl"] .suggestion-heading,
+    #autocomplete-dropdown[dir="rtl"] .suggestion-note {
+      text-align: right;
+    }
+
     .suggestion-item .item-text {
       white-space: nowrap;
       overflow: hidden;
@@ -313,7 +353,7 @@
           </button>
         </div>
       </form>
-      <div class="autocomplete-dropdown" id="autocomplete-dropdown" role="listbox"></div>
+      <div class="autocomplete-dropdown" id="autocomplete-dropdown" role="listbox" dir="rtl"></div>
     </div>
   </main>
 
@@ -388,10 +428,182 @@ document.getElementById('voice-search').addEventListener('click', () => {
     }
 
     clearBtn.addEventListener('click', () => {
+      // X clears the field only. Focus stays, history is never touched,
+      // and the panel reopens with the full recent list.
       searchInput.value = '';
       updateClearButton();
-      hideDropdown();
+      openHistory();
       searchInput.focus();
+    });
+
+    // ── Search history (localStorage only) ──────────────────────────────────
+    const RECENT_KEY = 'velo_recent_queries';
+    const RECENT_MAX = 12;
+    const RECENT_SHOWN = 8;
+
+    function loadRecent() {
+      try {
+        const raw = window.localStorage.getItem(RECENT_KEY);
+        const parsed = raw ? JSON.parse(raw) : [];
+        return Array.isArray(parsed) ? parsed.filter((v) => typeof v === 'string') : [];
+      } catch (err) {
+        return [];
+      }
+    }
+
+    function storeRecent(list) {
+      try {
+        window.localStorage.setItem(RECENT_KEY, JSON.stringify(list.slice(0, RECENT_MAX)));
+      } catch (err) {
+        /* storage unavailable: history is best-effort */
+      }
+    }
+
+    function recentKey(value) {
+      return value.trim().toLowerCase();
+    }
+
+    function addRecent(value) {
+      const text = value.trim();
+      if (!text) return;
+      const key = recentKey(text);
+      const next = [text].concat(loadRecent().filter((item) => recentKey(item) !== key));
+      storeRecent(next.slice(0, RECENT_MAX));
+    }
+
+    function removeRecent(value) {
+      const key = recentKey(value);
+      storeRecent(loadRecent().filter((item) => recentKey(item) !== key));
+    }
+
+    let popularCache = [];
+
+    function loadPopular() {
+      return fetch('/api/popular?limit=' + RECENT_SHOWN)
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          popularCache = data && Array.isArray(data.queries)
+            ? data.queries.filter((v) => typeof v === 'string')
+            : [];
+          return popularCache;
+        })
+        .catch(() => {
+          popularCache = [];
+          return popularCache;
+        });
+    }
+
+    function clockIcon() {
+      return '<svg class="item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
+        + '<circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>';
+    }
+
+    function renderHistory(rows, options) {
+      const opts = options || {};
+      currentSuggestions = rows.map((row) => row.value);
+      selectedIndex = -1;
+      dropdown.innerHTML = '';
+
+      rows.forEach((row, index) => {
+        const item = document.createElement('div');
+        item.className = 'suggestion-item';
+        item.setAttribute('role', 'option');
+        item.setAttribute('data-index', index);
+
+        const remove = row.removable === false ? '' :
+          '<button type="button" class="history-remove" data-remove="' + index + '" aria-label="Remove">&times;</button>';
+
+        item.innerHTML = clockIcon()
+          + '<span class="item-text">' + escapeHtml(row.value) + '</span>'
+          + remove;
+
+        item.addEventListener('mouseenter', () => { selectedIndex = index; });
+        item.addEventListener('click', (event) => {
+          const removeIndex = event.target.getAttribute && event.target.getAttribute('data-remove');
+          if (removeIndex !== null && removeIndex !== undefined) {
+            event.stopPropagation();
+            removeRecent(rows[Number(removeIndex)].value);
+            openHistory();
+            searchInput.focus();
+            return;
+          }
+          submitValue(row.value);
+        });
+
+        dropdown.appendChild(item);
+      });
+
+      if (opts.heading) {
+        const head = document.createElement('div');
+        head.className = 'suggestion-heading';
+        head.textContent = opts.heading;
+        dropdown.insertBefore(head, dropdown.firstChild);
+      }
+
+      const clear = document.createElement('div');
+      clear.className = 'suggestion-item suggestion-clear';
+      clear.setAttribute('role', 'option');
+      clear.innerHTML = '<span class="item-text">مسح سجل البحث</span>';
+      clear.addEventListener('click', () => {
+        try { window.localStorage.removeItem(RECENT_KEY); } catch (err) { /* ignore */ }
+        hideDropdown();
+      });
+      dropdown.appendChild(clear);
+
+      const note = document.createElement('div');
+      note.className = 'suggestion-note';
+      note.textContent = 'السجل محفوظ في متصفحك فقط';
+      dropdown.appendChild(note);
+
+      dropdown.classList.add('visible');
+    }
+
+    function submitValue(value) {
+      searchInput.value = value;
+      updateClearButton();
+      if (searchForm && typeof searchForm.requestSubmit === 'function') {
+        searchForm.requestSubmit();
+      } else if (searchForm) {
+        searchForm.submit();
+      }
+    }
+
+    function renderFromRecent(prefixText) {
+      const recent = loadRecent();
+      const prefix = (prefixText || '').trim().toLowerCase();
+      let rows = prefix
+        ? recent.filter((item) => item.toLowerCase().indexOf(prefix) === 0)
+        : recent.slice(0, RECENT_SHOWN);
+
+      rows = rows.slice(0, RECENT_SHOWN).map((value) => ({ value: value, removable: true }));
+
+      if (rows.length > 0) {
+        renderHistory(rows);
+        return;
+      }
+
+      const popular = popularCache
+        .filter((item) => (prefix ? item.toLowerCase().indexOf(prefix) === 0 : true))
+        .slice(0, RECENT_SHOWN)
+        .map((value) => ({ value: value, removable: false }));
+
+      if (popular.length > 0) {
+        renderHistory(popular, prefix ? undefined : { heading: 'الأكثر بحثًا' });
+      } else {
+        hideDropdown();
+      }
+    }
+
+    function openHistory() {
+      if (searchInput.value.trim().length > 0) {
+        renderFromRecent(searchInput.value);
+      } else {
+        renderFromRecent('');
+      }
+    }
+
+    searchInput.addEventListener('focus', () => {
+      openHistory();
     });
 
     const escapeHtml = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
