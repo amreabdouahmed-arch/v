@@ -11,7 +11,7 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, LazyLock, Mutex};
 use tantivy::collector::{Count, TopDocs};
 use tantivy::directory::MmapDirectory;
-use tantivy::query::{BooleanQuery, Occur, Query, QueryParser, TermQuery};
+use tantivy::query::{BooleanQuery, Occur, Query, QueryParser, RegexQuery, TermQuery};
 use tantivy::schema::{
     Field, FieldType, IndexRecordOption, Schema, TextFieldIndexing, TextOptions, Value, STORED,
     STRING,
@@ -414,6 +414,42 @@ fn query_has_syntax(query: &str) -> bool {
             .any(|token| matches!(token, "AND" | "OR" | "NOT"))
 }
 
+/// Shape of a bare domain query such as `cu.edu.eg` (optionally wrapped in
+/// quotes): one token, at least one dot, no tantivy query syntax. Such a query
+/// can never match `title`/`body`, because the host only lives in `url`, so it
+/// is answered from the URL field instead.
+fn domain_query_pattern(query: &str) -> Option<String> {
+    let mut trimmed = query.trim();
+    if trimmed.len() >= 2 && trimmed.starts_with('"') && trimmed.ends_with('"') {
+        trimmed = &trimmed[1..trimmed.len() - 1];
+    }
+    if trimmed.is_empty() || trimmed.len() > 253 {
+        return None;
+    }
+    if trimmed.chars().any(|c| {
+        c.is_whitespace()
+            || matches!(
+                c,
+                '"' | ':' | '(' | ')' | '[' | ']' | '{' | '}' | '+' | '-' | '^' | '*' | '~' | '!'
+                    | '\\'
+            )
+    }) {
+        return None;
+    }
+    if !trimmed.contains('.') {
+        return None;
+    }
+    Some(trimmed.to_ascii_lowercase())
+}
+
+/// Stored URLs are single `raw` tokens, so a domain is matched with a regex
+/// over the whole token instead of a term lookup.
+fn url_regex_query(url_field: Field, domain: &str) -> Result<Box<dyn Query>> {
+    let pattern = format!("(?i).*{}.*", regex::escape(domain));
+    let query = RegexQuery::from_pattern(&pattern, url_field)?;
+    Ok(Box::new(query))
+}
+
 fn field_tokenizer(schema: &Schema, field: tantivy::schema::Field) -> Option<String> {
     match schema.get_field_entry(field).field_type() {
         FieldType::Str(options) => options
@@ -577,7 +613,7 @@ impl TantivyEngine {
         } else {
             query_str.to_owned()
         };
-        let (query, parse_failed) = match query_parser.parse_query(&effective) {
+        let (mut query, mut parse_failed) = match query_parser.parse_query(&effective) {
             Ok(query) => (query, false),
             Err(error) => {
                 eprintln!("Query parse fell back to lenient mode: {error}");
@@ -585,6 +621,16 @@ impl TantivyEngine {
                 (lenient, true)
             }
         };
+        // A bare domain can only match the URL field, never title/body.
+        if let Some(domain) = domain_query_pattern(&effective) {
+            match url_regex_query(self.url_field, &domain) {
+                Ok(domain_query) => {
+                    query = domain_query;
+                    parse_failed = false;
+                }
+                Err(error) => eprintln!("Domain query could not be built: {error}"),
+            }
+        }
 
         let (mut top_docs, mut match_count) = searcher.search(
             &query,
@@ -1089,6 +1135,77 @@ mod tests {
 
         assert_eq!(first, 1);
         assert_eq!(engine.document_count(), 1);
+
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn domain_query_shape_is_detected() {
+        assert_eq!(
+            domain_query_pattern("cu.edu.eg").as_deref(),
+            Some("cu.edu.eg")
+        );
+        assert_eq!(
+            domain_query_pattern("  CU.EDU.EG  ").as_deref(),
+            Some("cu.edu.eg")
+        );
+        assert_eq!(
+            domain_query_pattern("\"cu.edu.eg\"").as_deref(),
+            Some("cu.edu.eg")
+        );
+        assert_eq!(domain_query_pattern("cairo university"), None);
+        assert_eq!(domain_query_pattern("example"), None);
+        assert_eq!(domain_query_pattern(""), None);
+    }
+
+    #[test]
+    fn arabic_query_is_folded_into_separate_tokens() {
+        let (engine, dir) = test_engine("arabic-tokens");
+        let analyzer = engine
+            .index
+            .tokenizers()
+            .get("arabic_norm")
+            .expect("arabic_norm tokenizer registered");
+        let mut tokens: Vec<String> = Vec::new();
+        analyzer
+            .token_stream("جامعة القاهرة")
+            .process(&mut |token| {
+                if token.text.is_empty() {
+                    return;
+                }
+                tokens.push(token.text.clone());
+            });
+        assert_eq!(tokens.len(), 2);
+        assert_eq!(tokens[0], "جامعة");
+        assert_eq!(tokens[1], "القاهرة");
+        assert_eq!(normalize_text("جامعة القاهرة"), "جامعة القاهرة");
+
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn domain_query_matches_the_url_even_when_the_body_has_no_host() {
+        let (engine, dir) = test_engine("domain-query");
+        engine
+            .add_document(
+                "u1",
+                "Cairo University",
+                "https://www.cu.edu.eg/",
+                "Cairo University",
+            )
+            .expect("add u1");
+        engine
+            .add_document("u2", "Caltech", "https://www.caltech.edu/", "Caltech")
+            .expect("add u2");
+        engine.commit().expect("commit");
+
+        let plain = engine.search("cu.edu.eg", 10, 0).expect("domain search");
+        assert_eq!(plain.total_hits, 1);
+        assert_eq!(plain.hits[0].url, "https://www.cu.edu.eg/");
+
+        let quoted = engine.search("\"cu.edu.eg\"", 10, 0).expect("quoted domain");
+        assert_eq!(quoted.total_hits, 1);
+        assert_eq!(quoted.hits[0].url, "https://www.cu.edu.eg/");
 
         let _ = fs::remove_dir_all(&dir);
     }
