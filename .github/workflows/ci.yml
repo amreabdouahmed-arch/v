@@ -29,12 +29,23 @@ jobs:
           set -o pipefail
           cargo test --locked --manifest-path rust_search/Cargo.toml 2>&1 | tee cargo-test.log
 
+      - name: Upload raw logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: raw-logs-${{ github.run_number }}
+          path: |
+            cargo-test.log
+            cargo-clippy.log
+          retention-days: 7
+          if-no-files-found: ignore
+
       - name: Report test outcome
         if: always()
         shell: bash
         run: |
           : > ann.txt
-          grep -E '^[[:space:]]*(error|warning)' cargo-test.log | head -n 5 >> ann.txt || true
+          grep -E '(^[[:space:]]*(error|warning)|DIAG|thread .* panicked|test .* FAILED)' cargo-test.log | head -n 5 >> ann.txt || true
           grep -E 'test result:|panicked at|^failures:' cargo-test.log | head -n 5 >> ann.txt || true
           head -n 10 ann.txt | while IFS= read -r l; do
             l="${l//%/%25}"
@@ -51,13 +62,24 @@ jobs:
           set -o pipefail
           cargo clippy --locked --manifest-path rust_search/Cargo.toml --all-targets -- -D warnings 2>&1 | tee cargo-clippy.log
 
+      - name: Upload raw logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: raw-logs-${{ github.run_number }}-clippy
+          path: |
+            cargo-test.log
+            cargo-clippy.log
+          retention-days: 7
+          if-no-files-found: ignore
+
       - name: Report clippy outcome
         if: always()
         shell: bash
         run: |
           sed -E 's/\x1B\[[0-9;]*[A-Za-z]//g' cargo-clippy.log > plain.txt || true
           grep -E '^[[:space:]]*-->' plain.txt | head -n 4 > ann2.txt || true
-          grep -E '^[[:space:]]*(error|warning)(\[|:)' plain.txt | head -n 4 >> ann2.txt || true
+          grep -E '(^[[:space:]]*(error|warning)|thread .* panicked|test .* FAILED)' plain.txt | head -n 4 >> ann2.txt || true
           grep -E '^[[:space:]]*(help|note):' plain.txt | head -n 2 >> ann2.txt || true
           n=$(wc -l < ann2.txt)
           printf '::notice title=clippy-count::diagnostic lines: %s\n' "$n"
@@ -87,3 +109,57 @@ jobs:
           head -n 8 fmt-files.txt | while IFS= read -r l; do
             l="${l//%/%25}"; printf '::notice title=fmt-file::%s\n' "$l"
           done
+
+  windows-build:
+    name: Build Windows binary
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: rust_search
+      - name: Build release
+        shell: pwsh
+        run: cargo build --release --locked --manifest-path rust_search/Cargo.toml
+      - name: Inspect binary
+        shell: pwsh
+        run: |
+          $p = "rust_search/target/release/velo-search-rs.exe"
+          if (-not (Test-Path $p)) { "MISSING $p"; exit 1 }
+          $f = Get-Item $p
+          "SIZE_BYTES=$($f.Length)"
+          "SHA256=$((Get-FileHash $p -Algorithm SHA256).Hash)"
+      - name: Publish release asset
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "build-${{ github.run_number }}" --title "CI build ${{ github.run_number }}" --notes "Automated Windows x64 release build" "rust_search/target/release/velo-search-rs.exe"
+
+  linux-build:
+    name: Build Linux binary
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: rust_search
+      - name: Build release
+        run: cargo build --release --locked --manifest-path rust_search/Cargo.toml
+      - name: Inspect binary
+        run: |
+          p=rust_search/target/release/velo-search-rs
+          test -f "$p" || { echo "MISSING $p"; exit 1; }
+          echo "SIZE_BYTES=$(stat -c%s "$p")"
+          echo "SHA256=$(sha256sum "$p" | cut -d' ' -f1)"
+      - name: Publish release asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "linux-${{ github.run_number }}" --title "Linux build ${{ github.run_number }}" --notes "Automated Linux x64 release build" rust_search/target/release/velo-search-rs
