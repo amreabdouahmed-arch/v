@@ -179,8 +179,12 @@ async fn gather_results(
     offset: usize,
 ) -> Result<(Vec<SearchResult>, u64), ApiError> {
     let mut local_results = Vec::new();
-    if let Some(engine) = &state.tantivy_engine {
-        if let Ok(search_res) = engine.search(local_query, limit.saturating_add(offset), 0) {
+    if let Some(engine) = state.tantivy_engine.clone() {
+        let query = local_query.to_string();
+        let wanted = limit.saturating_add(offset);
+        let outcome =
+            tokio::task::spawn_blocking(move || engine.search(&query, wanted, 0)).await;
+        if let Ok(Ok(search_res)) = outcome {
             for hit in search_res.hits {
                 local_results.push(SearchResult {
                     url: hit.url,
@@ -194,21 +198,30 @@ async fn gather_results(
             }
         }
     }
-    if let Some(engine) = &state.semantic_engine {
+    if let Some(engine) = state.semantic_engine.clone() {
+        let query = local_query.to_string();
         let wanted = limit.saturating_add(offset).min(50);
-        for (document, similarity) in engine.semantic_search(local_query, wanted) {
-            if f64::from(similarity) < state.semantic_min_score {
-                break;
+        let min_score = state.semantic_min_score;
+        let outcome = tokio::task::spawn_blocking(move || {
+            engine
+                .semantic_search(&query, wanted)
+                .into_iter()
+                .take_while(|(_, similarity)| f64::from(*similarity) >= min_score)
+                .collect::<Vec<_>>()
+        })
+        .await;
+        if let Ok(found) = outcome {
+            for (document, similarity) in found {
+                local_results.push(SearchResult {
+                    url: document.url,
+                    title: document.title,
+                    description: document.content.clone(),
+                    content: document.content,
+                    score: f64::from(similarity) * 10.0,
+                    favicon: None,
+                    source: "Velo Semantic",
+                });
             }
-            local_results.push(SearchResult {
-                url: document.url,
-                title: document.title,
-                description: document.content.clone(),
-                content: document.content,
-                score: f64::from(similarity) * 10.0,
-                favicon: None,
-                source: "Velo Semantic",
-            });
         }
     }
 
