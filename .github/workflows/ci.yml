@@ -29,12 +29,23 @@ jobs:
           set -o pipefail
           cargo test --locked --manifest-path rust_search/Cargo.toml 2>&1 | tee cargo-test.log
 
+      - name: Upload raw logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: raw-logs-${{ github.run_number }}
+          path: |
+            cargo-test.log
+            cargo-clippy.log
+          retention-days: 7
+          if-no-files-found: ignore
+
       - name: Report test outcome
         if: always()
         shell: bash
         run: |
           : > ann.txt
-          grep -E '^[[:space:]]*(error|warning)' cargo-test.log | head -n 5 >> ann.txt || true
+          grep -E '(^[[:space:]]*(error|warning)|DIAG|thread .* panicked|test .* FAILED)' cargo-test.log | head -n 5 >> ann.txt || true
           grep -E 'test result:|panicked at|^failures:' cargo-test.log | head -n 5 >> ann.txt || true
           head -n 10 ann.txt | while IFS= read -r l; do
             l="${l//%/%25}"
@@ -51,13 +62,24 @@ jobs:
           set -o pipefail
           cargo clippy --locked --manifest-path rust_search/Cargo.toml --all-targets -- -D warnings 2>&1 | tee cargo-clippy.log
 
+      - name: Upload raw logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: raw-logs-${{ github.run_number }}-clippy
+          path: |
+            cargo-test.log
+            cargo-clippy.log
+          retention-days: 7
+          if-no-files-found: ignore
+
       - name: Report clippy outcome
         if: always()
         shell: bash
         run: |
           sed -E 's/\x1B\[[0-9;]*[A-Za-z]//g' cargo-clippy.log > plain.txt || true
           grep -E '^[[:space:]]*-->' plain.txt | head -n 4 > ann2.txt || true
-          grep -E '^[[:space:]]*(error|warning)(\[|:)' plain.txt | head -n 4 >> ann2.txt || true
+          grep -E '(^[[:space:]]*(error|warning)|thread .* panicked|test .* FAILED)' plain.txt | head -n 4 >> ann2.txt || true
           grep -E '^[[:space:]]*(help|note):' plain.txt | head -n 2 >> ann2.txt || true
           n=$(wc -l < ann2.txt)
           printf '::notice title=clippy-count::diagnostic lines: %s\n' "$n"
