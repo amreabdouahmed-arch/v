@@ -1313,7 +1313,7 @@ async fn main() -> Result<()> {
     };
     std::fs::write(&target, &text)?;
     if baseline {
-        std::fs::write(&out_dir.join("baseline.json"), &baseline_text)?;
+        std::fs::write(out_dir.join("baseline.json"), &baseline_text)?;
     }
     println!("eval: wrote {}", target.display());
     print_report(&record);
