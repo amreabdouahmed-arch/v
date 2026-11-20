@@ -55,7 +55,9 @@ jobs:
         shell: bash
         run: |
           sed -E 's/\x1B\[[0-9;]*[A-Za-z]//g' cargo-clippy.log > plain.txt || true
-          grep -E '^[[:space:]]*(error|warning)' plain.txt > ann2.txt || true
+          grep -E '^[[:space:]]*-->' plain.txt | head -n 4 > ann2.txt || true
+          grep -E '^[[:space:]]*(error|warning)(\[|:)' plain.txt | head -n 4 >> ann2.txt || true
+          grep -E '^[[:space:]]*(help|note):' plain.txt | head -n 2 >> ann2.txt || true
           n=$(wc -l < ann2.txt)
           printf '::notice title=clippy-count::diagnostic lines: %s\n' "$n"
           if [ "$n" -eq 0 ]; then
