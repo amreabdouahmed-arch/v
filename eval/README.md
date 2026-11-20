@@ -124,7 +124,8 @@ Fill only the `grade` column (0-3) and return the file as
 ## Canonical URL rule
 
 Both labels and results are normalised with the same function
-(`src/bin/eval.rs`, `canonical_url`):
+(`rust_search/src/urlutil.rs`, `canonical_url`, re-exported by the library crate
+as `velo_search_rs::canonical_url`):
 
 - lowercase host, strip a leading `www.`
 - drop scheme, userinfo, port and fragment
@@ -132,7 +133,21 @@ Both labels and results are normalised with the same function
 - sort the remaining query parameters
 - collapse a trailing slash, except for the bare host (`example.com/`)
 
-Unit tests cover each rule.
+Unit tests cover each rule, plus idempotence, output shape and key equivalence.
+
+### Two layers, deliberately different
+
+The codebase holds **two** URL keys. They are not interchangeable and neither is
+a defect:
+
+| Layer | Function | Scheme / `www.` / trailing slash | Used for |
+|---|---|---|---|
+| Storage identity | `ported/common.rs` `canonicalize_url` | **kept** — only the fragment, tracking parameters, default ports and parameter order are normalised | `url_hash` primary key of `DOCUMENTS_TABLE`, and the Mongo `url` key |
+| Judgement key | `urlutil.rs` `canonical_url` | **stripped** | `labels` / `labelers` keys in `queries.jsonl`, and result dedup in the harness |
+
+`url_hash` is referenced by the Mongo-path delete in `ingest.rs`, so changing the
+storage identity would require a data migration. Do not unify the two layers
+without an explicit Owner decision and a migration plan.
 
 ## Metrics
 

@@ -19,6 +19,8 @@ use std::collections::{BTreeSet, HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
 
+use velo_search_rs::canonical_url;
+
 const RELEVANT_GRADE: u8 = 2;
 const METRIC_K: usize = 10;
 const DEFAULT_POOL_DEPTH: usize = 10;
@@ -157,6 +159,24 @@ struct BaselineOutput {
     overall: Metrics,
     slices: HashMap<String, Metrics>,
     pool: PoolStats,
+}
+
+/// Projects a full run record onto the baseline shape.
+///
+/// `baseline.json` must never carry raw results: only run metadata plus the
+/// aggregate, per-slice and per-query metrics. Keeping this as a pure function
+/// lets the test assert that property without touching the filesystem.
+fn to_baseline(record: &RunRecord) -> BaselineOutput {
+    BaselineOutput {
+        timestamp: record.timestamp.clone(),
+        git_commit: record.git_commit.clone(),
+        doc_counts: record.doc_counts.clone(),
+        env_flags: record.env_flags.clone(),
+        config: record.config.clone(),
+        overall: record.overall.clone(),
+        slices: record.slices.clone(),
+        pool: record.pool.clone(),
+    }
 }
 
 // Metric primitives (pure, unit-tested)
@@ -1277,16 +1297,7 @@ async fn main() -> Result<()> {
     };
 
     // Baseline output: metadata + aggregate metrics only, no raw results
-    let baseline_output = BaselineOutput {
-        timestamp: record.timestamp.clone(),
-        git_commit: record.git_commit.clone(),
-        doc_counts: record.doc_counts.clone(),
-        env_flags: record.env_flags.clone(),
-        config: record.config.clone(),
-        overall: record.overall.clone(),
-        slices: record.slices.clone(),
-        pool: record.pool.clone(),
-    };
+    let baseline_output = to_baseline(&record);
 
     let text = serde_json::to_string_pretty(&record)?;
     let baseline_text = serde_json::to_string_pretty(&baseline_output)?;
@@ -1302,7 +1313,7 @@ async fn main() -> Result<()> {
     };
     std::fs::write(&target, &text)?;
     if baseline {
-        std::fs::write(&out_dir.join("baseline.json"), &baseline_text)?;
+        std::fs::write(out_dir.join("baseline.json"), &baseline_text)?;
     }
     println!("eval: wrote {}", target.display());
     print_report(&record);
@@ -1588,36 +1599,6 @@ mod tests {
     use super::*;
 
     #[test]
-    fn canonical_url_lowercases_and_strips_www() {
-        assert_eq!(
-            canonical_url("https://www.Example.COM/Path"),
-            "example.com/Path"
-        );
-    }
-
-    #[test]
-    fn canonical_url_drops_fragment_and_utm() {
-        assert_eq!(
-            canonical_url("https://example.com/a?utm_source=x&id=7#top"),
-            "example.com/a?id=7"
-        );
-    }
-
-    #[test]
-    fn canonical_url_collapses_trailing_slash_but_keeps_root() {
-        assert_eq!(canonical_url("http://example.com/"), "example.com/");
-        assert_eq!(canonical_url("http://example.com/a/b/"), "example.com/a/b");
-    }
-
-    #[test]
-    fn canonical_url_sorts_query_parameters() {
-        assert_eq!(
-            canonical_url("https://example.com/p?b=2&a=1"),
-            "example.com/p?a=1&b=2"
-        );
-    }
-
-    #[test]
     fn ndcg_hand_computed() {
         let grades = [3u8, 2, 0, 1];
         let dcg = 7.0 + 3.0 / 3f64.log2() + 0.0 + 1.0 / 5f64.log2();
@@ -1786,22 +1767,100 @@ mod tests {
 
     #[test]
     fn baseline_output_has_no_raw_results() {
-        use serde_json::json;
-        let baseline_bytes = std::fs::read_to_string("eval/baseline.json").unwrap();
-        let value = json::from_str::<serde_json::Value>(&baseline_bytes).unwrap();
-        // Verify no raw result fields exist in the baseline output
-        let results = value.get("results");
-        assert!(results.is_none(), "baseline.json should not have a 'results' field");
-        let overall = value.get("overall").unwrap();
-        // Check that hit-level fields are absent
-        for key in &["ndcg", "mrr", "recall", "precision", "latency_ms", "server_ms"] {
-            assert!(overall.get(key).is_some(), "baseline.json should have metric: {}", key);
-        }
-        // Verify no hit-level fields leaked in
-        for key in &["id", "query", "lang", "intent", "hits", "url", "title", "snippet"] {
-            for slice_value in value.get("slices").unwrap().as_object().unwrap().values() {
-                assert!(!slice_value.as_object().unwrap().contains_key(key), "baseline.json slice should not have '{}'", key);
+        const FORBIDDEN: &[&str] = &["results", "hits", "url", "title", "snippet"];
+
+        fn walk(value: &serde_json::Value, path: &str, violations: &mut Vec<String>) {
+            match value {
+                serde_json::Value::Object(map) => {
+                    for (key, child) in map {
+                        if FORBIDDEN.contains(&key.as_str()) {
+                            violations.push(format!("{path}.{key}"));
+                        }
+                        walk(child, &format!("{path}.{key}"), violations);
+                    }
+                }
+                serde_json::Value::Array(items) => {
+                    for (index, child) in items.iter().enumerate() {
+                        walk(child, &format!("{path}[{index}]"), violations);
+                    }
+                }
+                _ => {}
             }
         }
+
+        let record = RunRecord {
+            timestamp: "2026-01-01T00:00:00Z".to_string(),
+            git_commit: Some("deadbeef".to_string()),
+            doc_counts: DocCounts {
+                tidb: Some(1),
+                mongo: Some(0),
+            },
+            env_flags: HashMap::new(),
+            config: HashMap::new(),
+            overall: Metrics {
+                ndcg: 0.5,
+                mrr: 0.25,
+                recall: 1.0,
+                precision: 0.5,
+                ..Metrics::default()
+            },
+            slices: HashMap::new(),
+            pool: PoolStats::default(),
+            results: vec![QueryResult {
+                id: "q001".to_string(),
+                query: "test".to_string(),
+                lang: "en".to_string(),
+                intent: "informational".to_string(),
+                freshness_sensitive: false,
+                label_source: "unlabeled".to_string(),
+                returned: 1,
+                latency_ms: 1.0,
+                server_ms: Some(0.5),
+                hits: vec![Hit {
+                    url: "https://example.com/a".to_string(),
+                    title: "Example".to_string(),
+                    snippet: "snippet text".to_string(),
+                    rank: 1,
+                    grade: 2,
+                    in_corpus: true,
+                    age_days: Some(1.0),
+                }],
+                ndcg: 1.0,
+                mrr: 1.0,
+                recall: 1.0,
+                precision: 1.0,
+            }],
+        };
+
+        let value = serde_json::to_value(to_baseline(&record)).unwrap();
+
+        assert!(
+            value.get("results").is_none(),
+            "baseline output should not have a 'results' field"
+        );
+
+        let overall = value.get("overall").unwrap();
+        for key in [
+            "ndcg",
+            "mrr",
+            "recall",
+            "precision",
+            "zero_result_rate",
+            "latency_p50_ms",
+            "latency_p95_ms",
+            "coverage",
+        ] {
+            assert!(
+                overall.get(key).is_some(),
+                "baseline output should have metric: {key}"
+            );
+        }
+
+        let mut violations = Vec::new();
+        walk(&value, "baseline", &mut violations);
+        assert!(
+            violations.is_empty(),
+            "baseline output leaked raw result fields: {violations:?}"
+        );
     }
 }
