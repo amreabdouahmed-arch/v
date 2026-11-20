@@ -25,13 +25,13 @@ cargo run --locked --manifest-path rust_search/Cargo.toml --bin eval -- --compar
 ```
 
 `eval/runs/` and `eval/pool/` are git-ignored. Only `eval/baseline.json`,
-`eval/queries.draft.jsonl`, `eval/extra_urls.csv` and this file are committed.
+`eval/queries.jsonl`, `eval/extra_urls.csv` and this file are committed.
 
 ## Files
 
 | Path | Purpose |
 |---|---|
-| `queries.draft.jsonl` | 115 queries, one JSON object per line, **unlabelled** |
+| `queries.jsonl` | frozen v1 query set: 115 queries, one JSON object per line, **unlabelled** |
 | `extra_urls.csv` | `query_id,url,grade` — known-good URLs supplied by the Owner |
 | `pool/pool.csv` | generated labelling pool: `query_id,query,url,title,snippet,rank,grade,labeler` |
 | `runs/<timestamp>.json` | generated run record: git commit, doc counts, env flags, raw hits, metrics |
@@ -52,6 +52,14 @@ cargo run --locked --manifest-path rust_search/Cargo.toml --bin eval -- --compar
 `intent` is one of `navigational`, `informational`, `local`, `transactional`,
 `typo`, `news`.
 
+`q025` (`[hlum hgrhivm`) is `جامعة القاهرة` typed on an English keyboard
+layout. It targets the same pages as `q001` (`جامعة القاهرة`), so both queries
+share relevance judgments for that URL set.
+
+Freshness-sensitive queries are labelled for **topical relevance** only. A page
+does not become irrelevant because it is old; page date is reported separately
+by the median top-10 age metric, not folded into the grade.
+
 ## Schema (one JSON object per line)
 
 ```json
@@ -68,8 +76,9 @@ cargo run --locked --manifest-path rust_search/Cargo.toml --bin eval -- --compar
 | 2 | relevant (answers the query) |
 | 3 | highly relevant (authoritative, complete) |
 
-`label_source` is `owner`, `silver` or `unlabeled`. The harness never assigns
-grades; labelling is done by the Owner and the Tech Lead.
+`label_source` is `owner`, `silver`, `mixed` or `unlabeled`. The harness never
+assigns grades; labelling is done by the Owner (`ar-eg` and `arabizi`) and the
+Tech Lead (all other queries).
 
 ## Canonical URL rule
 
@@ -112,8 +121,9 @@ good enough for comparing changes to the same engine, but absolute recall
 numbers are optimistic. `extra_urls.csv` is the escape hatch: add URLs the
 engine misses.
 
-To limit bias: keep the query set fixed, never re-pool after a ranking change
-without re-labelling, and record the git commit in every run record.
+To limit bias: keep the query set fixed, record the git commit in every run
+record, and after any major retrieval change re-pool and label **only the new
+URLs**. Existing grades are kept, so a re-pool does not discard earlier work.
 
 ## Acceptance rule for future changes
 

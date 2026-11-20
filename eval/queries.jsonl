@@ -7,13 +7,13 @@
 {"id":"q007","query":"ما هي اللغة العربية","lang":"ar","intent":"informational","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
 {"id":"q008","query":"أعراض نزلات البرد","lang":"ar","intent":"informational","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
 {"id":"q009","query":"فوائد الرياضة اليومية","lang":"ar","intent":"informational","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
-{"id":"q010","query":"كيفية كتابة بحث تخرج","lang":"ar","intent":"informational","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
+{"id":"q010","query":"كيفية كتابة بحت تخرج","lang":"ar","intent":"typo","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
 {"id":"q011","query":"جامعة الأزهر","lang":"ar","intent":"navigational","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
 {"id":"q012","query":"المتحف المصري الكبير","lang":"ar","intent":"local","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
 {"id":"q013","query":"مواعيد قطارات السكك الحديدية","lang":"ar","intent":"informational","freshness_sensitive":true,"label_source":"unlabeled","labels":{}}
 {"id":"q014","query":"درجات الحرارة في القاهرة","lang":"ar","intent":"local","freshness_sensitive":true,"label_source":"unlabeled","labels":{}}
-{"id":"q015","query":"نتيجة مباراة الأهلي أمس","lang":"ar","intent":"news","freshness_sensitive":true,"label_source":"unlabeled","labels":{}}
-{"id":"q016","query":"سعر الذهب عيار 21","lang":"ar","intent":"transactional","freshness_sensitive":true,"label_source":"unlabeled","labels":{}}
+{"id":"q015","query":"ترتيب الدوري الإنجليزي الممتاز","lang":"ar","intent":"news","freshness_sensitive":true,"label_source":"unlabeled","labels":{}}
+{"id":"q016","query":"نتائج مباريات كأس العالم 2026","lang":"ar","intent":"news","freshness_sensitive":true,"label_source":"unlabeled","labels":{}}
 {"id":"q017","query":"أفضل كتب تعلم البرمجة","lang":"ar","intent":"informational","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
 {"id":"q018","query":"تفسير سورة الكهف","lang":"ar","intent":"informational","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
 {"id":"q019","query":"أحاديث الرسول عن الصبر","lang":"ar","intent":"informational","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
@@ -22,62 +22,62 @@
 {"id":"q022","query":"شروط القبول في الجامعات الحكومية","lang":"ar","intent":"informational","freshness_sensitive":true,"label_source":"unlabeled","labels":{}}
 {"id":"q023","query":"منح دراسية في الخارج","lang":"ar","intent":"informational","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
 {"id":"q024","query":"وظائف التدريس في القاهرة","lang":"ar","intent":"local","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
-{"id":"q025","query":"حالة الطقس في الإسكندرية","lang":"ar","intent":"local","freshness_sensitive":true,"label_source":"unlabeled","labels":{}}
+{"id":"q025","query":"[hlum hgrhivm","lang":"ar","intent":"typo","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
 {"id":"q026","query":"فنادق خمس نجوم في القاهرة","lang":"ar","intent":"transactional","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
 {"id":"q027","query":"مستشفى 57357","lang":"ar","intent":"navigational","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
-{"id":"q028","query":"قانون العمل المصري الجديد","lang":"ar","intent":"informational","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
+{"id":"q028","query":"قانون العمل المصري الجديد","lang":"ar","intent":"informational","freshness_sensitive":true,"label_source":"unlabeled","labels":{}}
 {"id":"q029","query":"أسعار تذاكر الطيران إلى دبي","lang":"ar","intent":"transactional","freshness_sensitive":true,"label_source":"unlabeled","labels":{}}
 {"id":"q030","query":"جامعة المنصورة","lang":"ar","intent":"navigational","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
-{"id":"q031","query":"عايز أعرف مواعيد قطار الصعيد","lang":"ar-eg","intent":"local","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
-{"id":"q032","query":"الدنيا حر النهاردة","lang":"ar-eg","intent":"informational","freshness_sensitive":true,"label_source":"unlabeled","labels":{}}
+{"id":"q031","query":"عاوز اعرف مواعيد قطار الصعيد","lang":"ar-eg","intent":"local","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
+{"id":"q032","query":"ازاي اطلع بطاقه رقم قومي","lang":"ar-eg","intent":"informational","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
 {"id":"q033","query":"أسعار الطماطم في السوق","lang":"ar-eg","intent":"transactional","freshness_sensitive":true,"label_source":"unlabeled","labels":{}}
 {"id":"q034","query":"إيه أحسن موبايل في السوق","lang":"ar-eg","intent":"transactional","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
-{"id":"q035","query":"فين أقرب صيدلية مني","lang":"ar-eg","intent":"local","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
-{"id":"q036","query":"حجز فندق في الغردقة","lang":"ar-eg","intent":"transactional","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
-{"id":"q037","query":"أخبار الكورة المصري","lang":"ar-eg","intent":"news","freshness_sensitive":true,"label_source":"unlabeled","labels":{}}
-{"id":"q038","query":"الفلوس بتاعت البنك","lang":"ar-eg","intent":"informational","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
-{"id":"q039","query":"إزاي أعمل حساب على فيسبوك","lang":"ar-eg","intent":"informational","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
+{"id":"q035","query":"الاستعلام عن فاتورة الكهرباء","lang":"ar-eg","intent":"informational","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
+{"id":"q036","query":"حجز فندق فى الغردقه","lang":"ar-eg","intent":"transactional","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
+{"id":"q037","query":"اخبار الكوره المصريه","lang":"ar-eg","intent":"news","freshness_sensitive":true,"label_source":"unlabeled","labels":{}}
+{"id":"q038","query":"ازاى اجدد رخصه القياده","lang":"ar-eg","intent":"informational","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
+{"id":"q039","query":"ازاى اعمل حساب على فيسبوك","lang":"ar-eg","intent":"informational","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
 {"id":"q040","query":"رقم وزارة الصحة المصرية","lang":"ar-eg","intent":"navigational","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
 {"id":"q041","query":"المواصلات من المطار لوسط البلد","lang":"ar-eg","intent":"local","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
 {"id":"q042","query":"أسعار الإيجار في التجمع الخامس","lang":"ar-eg","intent":"transactional","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
-{"id":"q043","query":"أحسن مدرسة حضانة في المعادي","lang":"ar-eg","intent":"local","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
-{"id":"q044","query":"الجو عامل إزاي في مرسى علم","lang":"ar-eg","intent":"local","freshness_sensitive":true,"label_source":"unlabeled","labels":{}}
-{"id":"q045","query":"محتاج دكتور أسنان في مدينة نصر","lang":"ar-eg","intent":"local","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
-{"id":"q046","query":"إمتى نتيجة الشهادة الابتدائية","lang":"ar-eg","intent":"informational","freshness_sensitive":true,"label_source":"unlabeled","labels":{}}
-{"id":"q047","query":"أسعار الدواجن النهاردة","lang":"ar-eg","intent":"transactional","freshness_sensitive":true,"label_source":"unlabeled","labels":{}}
-{"id":"q048","query":"فين البنك الأهلي فرع مصر الجديدة","lang":"ar-eg","intent":"local","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
-{"id":"q049","query":"أكلات مصرية سهلة","lang":"ar-eg","intent":"informational","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
+{"id":"q043","query":"تنسيق الجامعات المرحله الاولى","lang":"ar-eg","intent":"informational","freshness_sensitive":true,"label_source":"unlabeled","labels":{}}
+{"id":"q044","query":"مواعيد المترو فى القاهره","lang":"ar-eg","intent":"informational","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
+{"id":"q045","query":"محتاج دكتور اسنان فى مدينه نصر","lang":"ar-eg","intent":"local","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
+{"id":"q046","query":"نتيجه الثانويه العامه","lang":"ar-eg","intent":"informational","freshness_sensitive":true,"label_source":"unlabeled","labels":{}}
+{"id":"q047","query":"تحميل whatsapp للكمبيوتر","lang":"ar-eg","intent":"informational","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
+{"id":"q048","query":"باقات فودافون","lang":"ar-eg","intent":"transactional","freshness_sensitive":true,"label_source":"unlabeled","labels":{}}
+{"id":"q049","query":"طريقه عمل الكشرى","lang":"ar-eg","intent":"informational","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
 {"id":"q050","query":"أحلى أماكن تفسح في القاهرة","lang":"ar-eg","intent":"local","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
 {"id":"q051","query":"شغل مطلوب محاسب في القاهرة","lang":"ar-eg","intent":"local","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
-{"id":"q052","query":"حجز قطار من القاهرة للإسكندرية","lang":"ar-eg","intent":"transactional","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
-{"id":"q053","query":"أسعار الذهب في الصاغة","lang":"ar-eg","intent":"transactional","freshness_sensitive":true,"label_source":"unlabeled","labels":{}}
-{"id":"q054","query":"إيه أخبار المصارعة المصري","lang":"ar-eg","intent":"news","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
-{"id":"q055","query":"دور سينما في الزمالك","lang":"ar-eg","intent":"local","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
+{"id":"q052","query":"سعر ايفون 17 فى مصر","lang":"ar-eg","intent":"transactional","freshness_sensitive":true,"label_source":"unlabeled","labels":{}}
+{"id":"q053","query":"شرح python للمبتدئين بالعربى","lang":"ar-eg","intent":"informational","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
+{"id":"q054","query":"جدول مباريات الدوري المصري","lang":"ar-eg","intent":"news","freshness_sensitive":true,"label_source":"unlabeled","labels":{}}
+{"id":"q055","query":"اليوم السابع","lang":"ar-eg","intent":"navigational","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
 {"id":"q056","query":"تمويل مشروع صغير","lang":"ar-eg","intent":"informational","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
-{"id":"q057","query":"أفضل عيادة أسنان في سموحة","lang":"ar-eg","intent":"local","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
-{"id":"q058","query":"درجات الحرارة في أسوان","lang":"ar-eg","intent":"local","freshness_sensitive":true,"label_source":"unlabeled","labels":{}}
+{"id":"q057","query":"المصري اليوم","lang":"ar-eg","intent":"navigational","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
+{"id":"q058","query":"اسعار تذاكر الاهرامات","lang":"ar-eg","intent":"transactional","freshness_sensitive":true,"label_source":"unlabeled","labels":{}}
 {"id":"q059","query":"مصاريف جامعة عين شمس","lang":"ar-eg","intent":"informational","freshness_sensitive":true,"label_source":"unlabeled","labels":{}}
-{"id":"q060","query":"أكل بيتزا في وسط البلد","lang":"ar-eg","intent":"local","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
-{"id":"q061","query":"إزاي أقدم على جواز سفر","lang":"ar-eg","intent":"informational","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
-{"id":"q062","query":"حجز استاد القاهرة","lang":"ar-eg","intent":"informational","freshness_sensitive":true,"label_source":"unlabeled","labels":{}}
+{"id":"q060","query":"سيره ام كلثوم","lang":"ar-eg","intent":"informational","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
+{"id":"q061","query":"ازاى اقدم على جواز سفر","lang":"ar-eg","intent":"informational","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
+{"id":"q062","query":"حجز تذاكر مباريات الدوري المصري","lang":"ar-eg","intent":"transactional","freshness_sensitive":true,"label_source":"unlabeled","labels":{}}
 {"id":"q063","query":"أسعار الحديد والأسمنت","lang":"ar-eg","intent":"transactional","freshness_sensitive":true,"label_source":"unlabeled","labels":{}}
-{"id":"q064","query":"أحسن دكتور جلدية في الإسكندرية","lang":"ar-eg","intent":"local","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
-{"id":"q065","query":"القاهرة الجديدة مواصلات","lang":"ar-eg","intent":"local","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
-{"id":"q066","query":"3andy mo2ad 3and el doctor","lang":"arabizi","intent":"typo","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
-{"id":"q067","query":"2oskar el gold el naharda","lang":"arabizi","intent":"transactional","freshness_sensitive":true,"label_source":"unlabeled","labels":{}}
-{"id":"q068","query":"eh akhbar el kora","lang":"arabizi","intent":"news","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
-{"id":"q069","query":"a7san makan fel 7ad2a","lang":"arabizi","intent":"local","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
-{"id":"q070","query":"da2ret 3aly as3ar el 3arabeyya","lang":"arabizi","intent":"typo","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
+{"id":"q064","query":"الضريبه العقاريه فى مصر","lang":"ar-eg","intent":"informational","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
+{"id":"q065","query":"القاهره الجديده مواصلات","lang":"ar-eg","intent":"local","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
+{"id":"q066","query":"ezay a3mel baspor","lang":"arabizi","intent":"informational","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
+{"id":"q067","query":"as3ar el dahab el naharda","lang":"arabizi","intent":"transactional","freshness_sensitive":true,"label_source":"unlabeled","labels":{}}
+{"id":"q068","query":"eh akhbar el kora","lang":"arabizi","intent":"news","freshness_sensitive":true,"label_source":"unlabeled","labels":{}}
+{"id":"q069","query":"a7san mat3am fel zamalek","lang":"arabizi","intent":"local","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
+{"id":"q070","query":"as3ar el 3arabeyyat el mosta3mala","lang":"arabizi","intent":"transactional","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
 {"id":"q071","query":"harvard university","lang":"en","intent":"navigational","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
 {"id":"q072","query":"world health organization","lang":"en","intent":"navigational","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
 {"id":"q073","query":"python list compreshension","lang":"en","intent":"typo","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
 {"id":"q074","query":"how to make sourdough bread","lang":"en","intent":"informational","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
 {"id":"q075","query":"best noise cancelling headphones","lang":"en","intent":"transactional","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
-{"id":"q076","query":"weather tomorrow","lang":"en","intent":"local","freshness_sensitive":true,"label_source":"unlabeled","labels":{}}
+{"id":"q076","query":"causes of climate change","lang":"en","intent":"informational","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
 {"id":"q077","query":"nba standings","lang":"en","intent":"news","freshness_sensitive":true,"label_source":"unlabeled","labels":{}}
 {"id":"q078","query":"university of oxford","lang":"en","intent":"navigational","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
 {"id":"q079","query":"machine learning certification","lang":"en","intent":"transactional","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
-{"id":"q080","query":"coffee near me","lang":"en","intent":"local","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
+{"id":"q080","query":"how does an espresso machine work","lang":"en","intent":"informational","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
 {"id":"q081","query":"iphone 17 price","lang":"en","intent":"transactional","freshness_sensitive":true,"label_source":"unlabeled","labels":{}}
 {"id":"q082","query":"chatgpt api documentation","lang":"en","intent":"navigational","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
 {"id":"q083","query":"how to invest in index fuds","lang":"en","intent":"typo","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
@@ -91,25 +91,25 @@
 {"id":"q091","query":"how to change a tire","lang":"en","intent":"informational","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
 {"id":"q092","query":"cheap hotels in istanbul","lang":"en","intent":"transactional","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
 {"id":"q093","query":"best laptops for students","lang":"en","intent":"transactional","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
-{"id":"q094","query":"youth soccer leagues near me","lang":"en","intent":"local","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
+{"id":"q094","query":"offside rule in football explained","lang":"en","intent":"informational","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
 {"id":"q095","query":"what is rust programming","lang":"en","intent":"informational","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
 {"id":"q096","query":"stock market today","lang":"en","intent":"news","freshness_sensitive":true,"label_source":"unlabeled","labels":{}}
-{"id":"q097","query":"dentist open saturday near me","lang":"en","intent":"local","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
+{"id":"q097","query":"hotels near eiffel tower","lang":"en","intent":"local","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
 {"id":"q098","query":"how to write a cover letter","lang":"en","intent":"informational","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
 {"id":"q099","query":"typescript generics explained","lang":"en","intent":"informational","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
 {"id":"q100","query":"weather in alexandria egypt","lang":"en","intent":"local","freshness_sensitive":true,"label_source":"unlabeled","labels":{}}
 {"id":"q101","query":"université du caire","lang":"other:fr","intent":"navigational","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
-{"id":"q102","query":"météo paris demain","lang":"other:fr","intent":"local","freshness_sensitive":true,"label_source":"unlabeled","labels":{}}
+{"id":"q102","query":"recette de crêpes","lang":"other:fr","intent":"informational","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
 {"id":"q103","query":"universidad de salamanca","lang":"other:es","intent":"navigational","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
-{"id":"q104","query":"precio del oro hoy","lang":"other:es","intent":"transactional","freshness_sensitive":true,"label_source":"unlabeled","labels":{}}
+{"id":"q104","query":"clasificación liga española","lang":"other:es","intent":"news","freshness_sensitive":true,"label_source":"unlabeled","labels":{}}
 {"id":"q105","query":"technische universität münchen","lang":"other:de","intent":"navigational","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
-{"id":"q106","query":"wetter berlin morgen","lang":"other:de","intent":"local","freshness_sensitive":true,"label_source":"unlabeled","labels":{}}
+{"id":"q106","query":"bundesliga tabelle","lang":"other:de","intent":"news","freshness_sensitive":true,"label_source":"unlabeled","labels":{}}
 {"id":"q107","query":"университет ломоносова","lang":"other:ru","intent":"navigational","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
 {"id":"q108","query":"boğaziçi üniversitesi","lang":"other:tr","intent":"navigational","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
 {"id":"q109","query":"دانشگاه تهران","lang":"other:fa","intent":"navigational","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
 {"id":"q110","query":"جامعہ پنجاب","lang":"other:ur","intent":"navigational","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
 {"id":"q111","query":"北京大学","lang":"other:zh","intent":"navigational","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
-{"id":"q112","query":"上海天气","lang":"other:zh","intent":"local","freshness_sensitive":true,"label_source":"unlabeled","labels":{}}
+{"id":"q112","query":"如何学习编程","lang":"other:zh","intent":"informational","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
 {"id":"q113","query":"東京大学","lang":"other:ja","intent":"navigational","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
-{"id":"q114","query":"東京の天気","lang":"other:ja","intent":"local","freshness_sensitive":true,"label_source":"unlabeled","labels":{}}
+{"id":"q114","query":"東京 観光 おすすめ","lang":"other:ja","intent":"informational","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}
 {"id":"q115","query":"दिल्ली विश्वविद्यालय","lang":"other:hi","intent":"navigational","freshness_sensitive":false,"label_source":"unlabeled","labels":{}}

@@ -542,7 +542,7 @@ async fn main() -> Result<()> {
     let _ = dotenvy::dotenv();
     let mut args = std::env::args().skip(1);
     let mut server = "http://127.0.0.1:8000".to_string();
-    let mut queries_path = PathBuf::from("eval/queries.draft.jsonl");
+    let mut queries_path = PathBuf::from("eval/queries.jsonl");
     let mut out_dir = PathBuf::from("eval");
     let mut pool = false;
     let mut baseline = false;
