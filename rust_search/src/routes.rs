@@ -184,21 +184,18 @@ async fn gather_results(
         let wanted = limit.saturating_add(offset);
         let outcome =
             tokio::task::spawn_blocking(move || engine.search(&query, wanted, 0)).await;
-        match outcome {
-            Ok(Ok(search_res)) => {
-                for hit in search_res.hits {
-                    local_results.push(SearchResult {
-                        url: hit.url,
-                        title: hit.title,
-                        description: hit.snippet.clone(),
-                        content: hit.snippet,
-                        score: hit.score as f64 + 10.0,
-                        favicon: None,
-                        source: "Velo Web",
-                    });
-                }
+        if let Ok(Ok(search_res)) = outcome {
+            for hit in search_res.hits {
+                local_results.push(SearchResult {
+                    url: hit.url,
+                    title: hit.title,
+                    description: hit.snippet.clone(),
+                    content: hit.snippet,
+                    score: hit.score as f64 + 10.0,
+                    favicon: None,
+                    source: "Velo Web",
+                });
             }
-            Ok(Err(_)) | Err(_) => {}
         }
     }
     if let Some(engine) = state.semantic_engine.clone() {
