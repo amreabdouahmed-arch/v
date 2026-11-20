@@ -1161,7 +1161,7 @@ mod tests {
     #[test]
     fn arabic_query_is_folded_into_separate_tokens() {
         let (engine, dir) = test_engine("arabic-tokens");
-        let mut analyzer = engine
+        let analyzer = engine
             .index
             .tokenizers()
             .get("arabic_norm")
