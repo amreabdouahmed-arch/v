@@ -26,6 +26,7 @@ pub(crate) struct AppState {
     pub(crate) mongo_partition_percent: u8,
     pub(crate) search_backend: String,
     pub(crate) search_cache: Arc<Mutex<SearchCache>>,
+    pub(crate) response_cache: Arc<Mutex<crate::response_cache::ResponseCache>>,
     pub(crate) tantivy_engine: Option<Arc<ported::tantivy_engine::TantivyEngine>>,
     pub(crate) recent_queries: Arc<Mutex<Vec<String>>>,
     pub(crate) pagerank_scores: Arc<HashMap<String, f64>>,

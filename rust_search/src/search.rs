@@ -64,6 +64,14 @@ pub(crate) fn invalidate_search_cache(state: &AppState) -> Result<(), ApiError> 
         .map_err(|_| ApiError::internal(anyhow!("Search cache lock is poisoned")))?;
     cache.entries.clear();
     cache.lru.clear();
+    drop(cache);
+    // The response-level cache is derived from the same stores, so every
+    // existing invalidation point (admin.rs, ingest.rs) clears it too.
+    let mut responses = state
+        .response_cache
+        .lock()
+        .map_err(|_| ApiError::internal(anyhow!("Response cache lock is poisoned")))?;
+    responses.invalidate_all();
     Ok(())
 }
 

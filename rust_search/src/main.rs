@@ -4,6 +4,7 @@ mod ingest;
 mod mongo;
 mod pages;
 pub mod ported;
+mod response_cache;
 mod routes;
 mod search;
 mod state;
@@ -258,6 +259,7 @@ async fn main() -> Result<()> {
         mongo_partition_percent,
         search_backend,
         search_cache: Arc::new(Mutex::new(SearchCache::default())),
+        response_cache: Arc::new(Mutex::new(response_cache::ResponseCache::new())),
         tantivy_engine,
         spell_checker,
         synonyms,
