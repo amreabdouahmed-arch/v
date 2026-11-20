@@ -1199,48 +1199,14 @@ mod tests {
             .expect("add u2");
         engine.commit().expect("commit");
 
-        // TEMPORARY DIAGNOSTIC (cycle 1): print the real url tokens and test
-        // three regex shapes, then fail on purpose so the log shows the output.
-        let mut url_tokens: Vec<String> = Vec::new();
-        if let Some(analyzer) = engine.index.tokenizers().get("raw") {
-            let mut analyzer = analyzer;
-            analyzer
-                .token_stream("https://www.cu.edu.eg/")
-                .process(&mut |token| {
-                    if token.text.is_empty() {
-                        return;
-                    }
-                    url_tokens.push(token.text.clone());
-                });
-        }
-        println!("DIAG raw-tokenizer tokens = {:?}", url_tokens);
-
-        let searcher = engine.reader.searcher();
-        for (label, pattern) in [
-            ("exact-escaped", regex::escape("https://www.cu.edu.eg/")),
-            ("ci-wildcards", "(?i).*cu\\.edu\\.eg.*".to_string()),
-            ("plain-wildcards", ".*cu\\.edu\\.eg.*".to_string()),
-            ("ci-substring", "(?i)cu\\.edu\\.eg".to_string()),
-        ] {
-            let q = RegexQuery::from_pattern(&pattern, engine.url_field);
-            match q {
-                Ok(query) => {
-                    let count = searcher
-                        .search(&query, &Count)
-                        .expect("diag regex search");
-                    println!("DIAG pattern[{label}] = {pattern:?} -> hits={count}");
-                }
-                Err(error) => println!("DIAG pattern[{label}] = {pattern:?} -> ERROR {error}"),
-            }
-        }
-
         let plain = engine.search("cu.edu.eg", 10, 0).expect("domain search");
-        println!(
-            "DIAG engine.search(cu.edu.eg) -> total_hits={} urls={:?}",
-            plain.total_hits,
-            plain.hits.iter().map(|h| h.url.clone()).collect::<Vec<_>>()
-        );
+        assert_eq!(plain.total_hits, 1);
+        assert_eq!(plain.hits[0].url, "https://www.cu.edu.eg/");
 
-        assert!(false, "diagnostic cycle 1");
+        let quoted = engine.search("\"cu.edu.eg\"", 10, 0).expect("quoted domain");
+        assert_eq!(quoted.total_hits, 1);
+        assert_eq!(quoted.hits[0].url, "https://www.cu.edu.eg/");
+
+        let _ = fs::remove_dir_all(&dir);
     }
 }
