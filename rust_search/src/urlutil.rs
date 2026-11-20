@@ -162,4 +162,9 @@ mod tests {
         assert_eq!(left, right);
         assert_eq!(left, "example.com/a?a=1&b=2");
     }
+
+    #[test]
+    fn t1b_double_trailing_slash_collapses() {
+        assert_eq!(canonical_url("https://example.com/a/b//"), "example.com/a/b");
+    }
 }

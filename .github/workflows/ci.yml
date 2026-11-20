@@ -6,7 +6,7 @@ on:
   pull_request:
 
 env:
-  CARGO_TERM_COLOR: always
+  CARGO_TERM_COLOR: never
 
 jobs:
   rust:
@@ -34,8 +34,8 @@ jobs:
         shell: bash
         run: |
           : > ann.txt
-          grep -E '^error' cargo-test.log | head -n 5 >> ann.txt || true
-          grep -E 'test result:|^failures:|panicked at' cargo-test.log | head -n 5 >> ann.txt || true
+          grep -E '^[[:space:]]*(error|warning)' cargo-test.log | head -n 5 >> ann.txt || true
+          grep -E 'test result:|panicked at|^failures:' cargo-test.log | head -n 5 >> ann.txt || true
           head -n 10 ann.txt | while IFS= read -r l; do
             l="${l//%/%25}"
             case "$l" in
@@ -54,7 +54,16 @@ jobs:
         if: always()
         shell: bash
         run: |
-          grep -E '^(error|warning)' cargo-clippy.log | head -n 10 > ann2.txt || true
-          while IFS= read -r l; do
-            l="${l//%/%25}"; printf '::error title=cargo-clippy::%s\n' "$l"
-          done < ann2.txt
+          sed -E 's/\x1B\[[0-9;]*[A-Za-z]//g' cargo-clippy.log > plain.txt || true
+          grep -E '^[[:space:]]*(error|warning)' plain.txt > ann2.txt || true
+          n=$(wc -l < ann2.txt)
+          printf '::notice title=clippy-count::diagnostic lines: %s\n' "$n"
+          if [ "$n" -eq 0 ]; then
+            tail -n 10 plain.txt | while IFS= read -r l; do
+              l="${l//%/%25}"; printf '::error title=clippy-tail::%s\n' "$l"
+            done
+          else
+            head -n 9 ann2.txt | while IFS= read -r l; do
+              l="${l//%/%25}"; printf '::error title=cargo-clippy::%s\n' "$l"
+            done
+          fi
