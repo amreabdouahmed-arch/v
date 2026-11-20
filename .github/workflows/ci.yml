@@ -87,3 +87,32 @@ jobs:
           head -n 8 fmt-files.txt | while IFS= read -r l; do
             l="${l//%/%25}"; printf '::notice title=fmt-file::%s\n' "$l"
           done
+
+  windows-build:
+    name: Build Windows binary
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: rust_search
+      - name: Build release
+        shell: pwsh
+        run: cargo build --release --locked --manifest-path rust_search/Cargo.toml
+      - name: Inspect binary
+        shell: pwsh
+        run: |
+          $p = "rust_search/target/release/velo-search-rs.exe"
+          if (-not (Test-Path $p)) { "MISSING $p"; exit 1 }
+          $f = Get-Item $p
+          "SIZE_BYTES=$($f.Length)"
+          "SHA256=$((Get-FileHash $p -Algorithm SHA256).Hash)"
+      - name: Publish release asset
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "build-${{ github.run_number }}" --title "CI build ${{ github.run_number }}" --notes "Automated Windows x64 release build" "rust_search/target/release/velo-search-rs.exe"
