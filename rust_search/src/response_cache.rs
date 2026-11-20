@@ -23,7 +23,7 @@ const DEFAULT_MAX_ENTRIES: usize = 512;
 
 type CacheKey = (String, usize, usize);
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub(crate) struct CachedPage {
     pub(crate) results: Vec<SearchResult>,
     pub(crate) total_count: u64,
